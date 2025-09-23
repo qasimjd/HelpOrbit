@@ -12,11 +12,13 @@ import { loginAction } from '@/server/actions/server-actions'
 import { cn } from '@/lib/utils'
 
 interface LoginFormProps {
-  organizationSlug: string
+  organizationSlug?: string
   className?: string
+  intent?: string
+  showModeSwitch?: boolean
 }
 
-export function LoginForm({ organizationSlug, className }: LoginFormProps) {
+export function LoginForm({ organizationSlug, className, intent, showModeSwitch }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   
@@ -29,8 +31,9 @@ export function LoginForm({ organizationSlug, className }: LoginFormProps) {
   return (
     <div className={cn("space-y-6", className)}>
       <form action={formAction} className="space-y-4">
-        {/* Hidden field for organization slug */}
-        <input type="hidden" name="organizationSlug" value={organizationSlug} />
+        {/* Hidden fields for organization slug and intent */}
+        {organizationSlug && <input type="hidden" name="organizationSlug" value={organizationSlug} />}
+        {intent && <input type="hidden" name="intent" value={intent} />}
         
         {/* Error Message */}
         {!state.success && state.message && (
@@ -105,6 +108,7 @@ export function LoginForm({ organizationSlug, className }: LoginFormProps) {
           <div className="flex items-center space-x-2">
             <Checkbox
               id="remember-me"
+              name="rememberMe"
               checked={rememberMe}
               onCheckedChange={(checked) => setRememberMe(checked === true)}
               disabled={isPending}
@@ -116,13 +120,21 @@ export function LoginForm({ organizationSlug, className }: LoginFormProps) {
             >
               Remember me
             </Label>
+            {/* Hidden input for form submission */}
+            <input 
+              type="hidden" 
+              name="rememberMe" 
+              value={rememberMe ? 'on' : 'off'} 
+            />
           </div>
-          <Link
-            href={`/org/${organizationSlug}/forgot-password`}
-            className="text-sm link-brand"
-          >
-            Forgot password?
-          </Link>
+          {organizationSlug && (
+            <Link
+              href={`/org/${organizationSlug}/forgot-password`}
+              className="text-sm link-brand"
+            >
+              Forgot password?
+            </Link>
+          )}
         </div>
 
         {/* Submit Button */}
@@ -142,40 +154,60 @@ export function LoginForm({ organizationSlug, className }: LoginFormProps) {
         </Button>
       </form>
 
-      {/* Demo Credentials Info */}
-      <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-        <h4 className="text-sm font-medium text-blue-800 mb-2">
-          Demo Credentials
-        </h4>
-        <p className="text-xs text-blue-600 mb-2">
-          For testing purposes, use:
-        </p>
-        <div className="text-xs font-mono text-blue-700 space-y-1">
-          <div><strong>Email:</strong> demo@example.com</div>
-          <div><strong>Password:</strong> password</div>
+      {/* Mode Switch */}
+      {showModeSwitch && (
+        <div className="text-center text-sm text-gray-500">
+          <p>
+            Don't have an account?{' '}
+            <Link
+              href={intent ? `/auth?intent=${intent}&mode=signup` : '/auth?mode=signup'}
+              className="link-brand font-medium"
+            >
+              Create account
+            </Link>
+          </p>
         </div>
-      </div>
+      )}
 
-      {/* Footer Links */}
-      <div className="text-center text-sm text-gray-500 space-y-2">
-        <p>
-          Don't have an account?{' '}
-          <Link
-            href={`/org/${organizationSlug}/register`}
-            className="link-brand font-medium"
-          >
-            Contact your administrator
-          </Link>
-        </p>
-        <p>
-          <Link
-            href="/select-organization"
-            className="link-brand"
-          >
-            Switch organization
-          </Link>
-        </p>
-      </div>
+      {/* Organization-specific content */}
+      {organizationSlug && !showModeSwitch && (
+        <>
+          {/* Demo Credentials Info */}
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <h4 className="text-sm font-medium text-blue-800 mb-2">
+              Demo Credentials
+            </h4>
+            <p className="text-xs text-blue-600 mb-2">
+              For testing purposes, use:
+            </p>
+            <div className="text-xs font-mono text-blue-700 space-y-1">
+              <div><strong>Email:</strong> demo@example.com</div>
+              <div><strong>Password:</strong> password</div>
+            </div>
+          </div>
+
+          {/* Footer Links */}
+          <div className="text-center text-sm text-gray-500 space-y-2">
+            <p>
+              Don't have an account?{' '}
+              <Link
+                href={`/org/${organizationSlug}/register`}
+                className="link-brand font-medium"
+              >
+                Contact your administrator
+              </Link>
+            </p>
+            <p>
+              <Link
+                href="/select-organization"
+                className="link-brand"
+              >
+                Switch organization
+              </Link>
+            </p>
+          </div>
+        </>
+      )}
     </div>
   )
 }
