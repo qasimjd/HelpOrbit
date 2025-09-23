@@ -5,6 +5,8 @@ import { organizationClient } from "better-auth/client/plugins";
 import { auth } from "@/lib/auth";
 
 export const authClient = createAuthClient({
+    baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+    basePath: "/api/auth", // Ensure the API path is correctly set
     plugins: [
         inferAdditionalFields<typeof auth>(),
         organizationClient(),

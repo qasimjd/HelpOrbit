@@ -1,5 +1,5 @@
 import React from 'react'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { validateOrganizationAction } from '@/server/actions/server-actions'
 
 interface OrganizationLayoutProps {
@@ -13,7 +13,7 @@ export default async function OrganizationLayout({
 }: OrganizationLayoutProps) {
   const { slug } = await params
   
-  // Validate that the organization exists
+  // Validate that the organization exists first
   const { exists, organization } = await validateOrganizationAction(slug)
   
   if (!exists || !organization) {

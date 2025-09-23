@@ -189,6 +189,19 @@ async function seed() {
           size: 'Small'
         }),
       },
+      {
+        id: 'org-5',
+        name: 'Qasim Javed Organization',
+        slug: 'qasim-javed',
+        logo: 'https://avatar.vercel.sh/qasim-javed',
+        metadata: JSON.stringify({
+          domain: 'qasimjaved.com',
+          primaryColor: '#16a34a',
+          isPublic: true,
+          industry: 'Technology',
+          size: 'Medium'
+        }),
+      },
     ];
 
     await db.insert(organization).values(organizations);
@@ -230,6 +243,18 @@ async function seed() {
         id: 'member-6',
         userId: 'user-2',
         organizationId: 'org-3',
+        role: 'admin' as const,
+      },
+      {
+        id: 'member-7',
+        userId: 'user-1',
+        organizationId: 'org-5', // qasim-javed organization
+        role: 'owner' as const,
+      },
+      {
+        id: 'member-8',
+        userId: 'user-2',
+        organizationId: 'org-5', // qasim-javed organization
         role: 'admin' as const,
       },
     ];
@@ -342,6 +367,45 @@ async function seed() {
         createdAt: new Date('2024-01-15T09:00:00Z'),
         updatedAt: new Date('2024-01-18T16:45:00Z'),
         resolvedAt: new Date('2024-01-18T16:45:00Z'),
+      },
+      {
+        id: 'ticket-5001',
+        title: 'Dashboard loading slowly',
+        description: 'The dashboard is taking too long to load. Users are experiencing delays when accessing their organization dashboard. This affects productivity and user experience.',
+        status: 'open' as const,
+        priority: 'high' as const,
+        organizationId: 'org-5', // qasim-javed
+        requesterId: 'user-1',
+        assigneeId: 'member-7',
+        tags: JSON.stringify(['dashboard', 'performance', 'frontend']),
+        createdAt: new Date('2024-01-22T10:00:00Z'),
+        updatedAt: new Date('2024-01-22T10:00:00Z'),
+      },
+      {
+        id: 'ticket-5002',
+        title: 'Email notifications not working',
+        description: 'Users are not receiving email notifications for ticket updates. The email service seems to be misconfigured or not working properly.',
+        status: 'in_progress' as const,
+        priority: 'medium' as const,
+        organizationId: 'org-5', // qasim-javed
+        requesterId: 'user-2',
+        assigneeId: 'member-8',
+        tags: JSON.stringify(['email', 'notifications', 'communication']),
+        createdAt: new Date('2024-01-21T14:30:00Z'),
+        updatedAt: new Date('2024-01-22T09:15:00Z'),
+      },
+      {
+        id: 'ticket-5003',
+        title: 'Add export functionality',
+        description: 'Users need the ability to export tickets and data to CSV or PDF format for reporting and analysis purposes.',
+        status: 'open' as const,
+        priority: 'low' as const,
+        organizationId: 'org-5', // qasim-javed
+        requesterId: 'user-1',
+        assigneeId: null,
+        tags: JSON.stringify(['feature-request', 'export', 'reporting']),
+        createdAt: new Date('2024-01-20T16:45:00Z'),
+        updatedAt: new Date('2024-01-20T16:45:00Z'),
       },
     ];
 

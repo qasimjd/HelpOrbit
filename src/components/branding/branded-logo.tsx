@@ -37,7 +37,7 @@ export function BrandedLogo({ size = 'md', showFallback = true, className }: Bra
           src={logoUrl}
           alt={altText}
           fill
-          className="object-contain"
+          className="object-contain rounded-full"
           priority={size === 'lg' || size === 'xl'}
           onError={() => {
             if (showFallback && logoUrl !== '/logos/helporbit-logo.svg') {

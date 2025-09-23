@@ -30,6 +30,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { createOrganizationAction, checkOrganizationSlugAction } from "@/server/actions/organization-actions";
 import { useDebounce } from "@/hooks/use-debounce";
+import { useSession } from "@/lib/auth-client";
+import { AuthPromptDialog } from "@/components/auth/auth-prompt-dialog";
 
 const createOrganizationSchema = z.object({
   name: z.string().min(1, "Organization name is required").max(100, "Name too long"),
@@ -59,6 +61,11 @@ export function CreateOrganizationDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
   const [checkingSlug, setCheckingSlug] = useState(false);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+
+  // Check if user is authenticated
+  const { data: session, isPending } = useSession();
+  const isAuthenticated = !!session?.user;
 
   const form = useForm<CreateOrganizationForm>({
     resolver: zodResolver(createOrganizationSchema),
@@ -73,6 +80,18 @@ export function CreateOrganizationDialog({
   const watchedName = form.watch("name");
   const watchedSlug = form.watch("slug");
   const debouncedSlug = useDebounce(watchedSlug, 500);
+
+  // Handle dialog opening - check authentication first
+  useEffect(() => {
+    if (open && !isPending) {
+      if (!isAuthenticated) {
+        // Close the create dialog and show auth prompt
+        onOpenChange(false);
+        setShowAuthPrompt(true);
+        return;
+      }
+    }
+  }, [open, isAuthenticated, isPending, onOpenChange]);
 
   // Auto-generate slug from name
   useEffect(() => {
@@ -149,20 +168,21 @@ export function CreateOrganizationDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Building className="h-5 w-5" />
-            Create Organization
-          </DialogTitle>
-          <DialogDescription>
-            Create a new organization to manage your team and projects.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building className="h-5 w-5" />
+              Create Organization
+            </DialogTitle>
+            <DialogDescription>
+              Create a new organization to manage your team and projects.
+            </DialogDescription>
+          </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-4">
               {/* Organization Preview */}
               <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
@@ -306,5 +326,13 @@ export function CreateOrganizationDialog({
         </Form>
       </DialogContent>
     </Dialog>
+
+    {/* Authentication Prompt Dialog */}
+    <AuthPromptDialog
+      open={showAuthPrompt}
+      onOpenChange={setShowAuthPrompt}
+      action="create-organization"
+    />
+    </>
   );
 }

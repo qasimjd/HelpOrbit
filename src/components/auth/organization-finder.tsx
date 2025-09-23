@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { CreateOrganizationDialog } from '@/components/auth/create-organization-dialog'
 import { searchOrganizations } from '@/server/actions/organization-actions'
+import Image from 'next/image'
 
 interface OrganizationResult {
   id: string
@@ -24,9 +25,10 @@ interface OrganizationResult {
 interface OrganizationFinderProps {
   onOrganizationSelect?: (org: OrganizationResult) => void
   className?: string
+  autoCreate?: boolean // Whether to auto-open create dialog for authenticated users
 }
 
-export function OrganizationFinder({ onOrganizationSelect, className }: OrganizationFinderProps) {
+export function OrganizationFinder({ onOrganizationSelect, className, autoCreate }: OrganizationFinderProps) {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -34,6 +36,13 @@ export function OrganizationFinder({ onOrganizationSelect, className }: Organiza
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [organizations, setOrganizations] = useState<OrganizationResult[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
+
+  // Auto-open create dialog if autoCreate is true and user comes from auth flow
+  React.useEffect(() => {
+    if (autoCreate) {
+      setShowCreateDialog(true)
+    }
+  }, [autoCreate])
 
   // Fetch organizations based on search term
   const handleSearch = useCallback(async (term: string) => {
@@ -92,7 +101,7 @@ export function OrganizationFinder({ onOrganizationSelect, className }: Organiza
     if (!slug) return
 
     setIsLoading(true)
-    
+
     try {
       // In real app, this would validate the slug exists
       router.push(`/org/${slug}/login`)
@@ -134,48 +143,56 @@ export function OrganizationFinder({ onOrganizationSelect, className }: Organiza
       {searchTerm.trim() && (
         <div className="space-y-3">
           {searchLoading ? (
-            <div className="text-center py-8">
-              <Loader2 className="w-8 h-8 animate-spin mx-auto text-gray-400 mb-2" />
-              <p className="text-sm text-gray-500">Searching organizations...</p>
+            <div className="flex flex-col items-center py-8">
+              <Loader2 className="w-10 h-10 animate-spin text-primary mb-3" />
+              <p className="text-base text-gray-500 font-medium">Searching organizations...</p>
             </div>
           ) : organizations.length > 0 ? (
             <>
-              <h3 className="text-sm font-medium text-gray-700">
-                Select your organization:
+              <h3 className="text-base font-semibold mb-2">
+                Select your organization
               </h3>
-              <div className="space-y-2 max-h-64 overflow-y-auto">
+              <div className="space-y-3 max-h-72 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-transparent">
                 {organizations.map((org: OrganizationResult) => (
-                  <Card 
+                  <Card
                     key={org.id}
                     className={cn(
-                      "cursor-pointer transition-all hover:shadow-md border-2 hover:border-gray-300",
-                      selectedOrg?.id === org.id && "ring-2 ring-blue-500 border-blue-500"
+                      "cursor-pointer transition-all hover:shadow-lg border-2 hover:border",
+                      selectedOrg?.id === org.id && `ring-2 ring-${org.primaryColor} border-${org.primaryColor}`
                     )}
                     onClick={() => handleOrganizationSelect(org)}
                   >
-                    <CardContent className="p-4">
+                    <CardContent className="p-5">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div 
-                            className="w-3 h-3 rounded-full flex-shrink-0"
+                        <div className="flex items-center space-x-4">
+                          <div
+                            className="w-4 h-4 rounded-full flex-shrink-0"
                             style={{ backgroundColor: org.primaryColor }}
                           />
+                          <div className="w-10 h-10 relative rounded-full overflow-hidden border">
+                            <Image
+                              src={org.logoUrl ?? '/logos/helporbit-logo.svg'}
+                              alt={org.name + ' logo'}
+                              fill
+                              className="object-contain"
+                            />
+                          </div>
                           <div>
-                            <h4 className="font-medium text-gray-900">
+                            <h4 className="font-semibold text-gray-900 leading-tight">
                               {org.name}
                             </h4>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-xs text-gray-500">
                               {org.domain || `@${org.slug}`}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
                           {org.isPublic && (
-                            <Badge variant="secondary" className="text-xs">
+                            <Badge variant="secondary" className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700 border border-blue-200">
                               Public
                             </Badge>
                           )}
-                          <ArrowRight className="w-4 h-4 text-gray-400" />
+                          <ArrowRight className="w-5 h-5 text-blue-400" />
                         </div>
                       </div>
                     </CardContent>
@@ -184,10 +201,10 @@ export function OrganizationFinder({ onOrganizationSelect, className }: Organiza
               </div>
             </>
           ) : (
-            <div className="text-center py-8 space-y-4">
-              <Building className="w-12 h-12 text-gray-400 mx-auto" />
-              <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">
+            <div className="flex flex-col items-center py-8 space-y-5 bg-blue-50 rounded-xl border border-blue-100">
+              <Building className="w-14 h-14 text-blue-300 mb-2" />
+              <div className="text-center">
+                <h3 className="text-base font-semibold text-blue-700 mb-1">
                   No organizations found
                 </h3>
                 <p className="text-sm text-gray-500 mb-4">
@@ -196,7 +213,7 @@ export function OrganizationFinder({ onOrganizationSelect, className }: Organiza
                 <Button
                   onClick={handleDirectEntry}
                   disabled={isLoading || !searchTerm.trim()}
-                  className="btn-brand-primary"
+                  className="btn-brand-primary px-6 py-2 text-base font-semibold rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow"
                 >
                   {isLoading ? (
                     <>
@@ -215,8 +232,6 @@ export function OrganizationFinder({ onOrganizationSelect, className }: Organiza
           )}
         </div>
       )}
-
-      {/* Create Organization Dialog */}
       <CreateOrganizationDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}

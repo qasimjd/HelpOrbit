@@ -1,43 +1,53 @@
 import React from 'react'
 import { Metadata } from 'next'
+import { redirect } from 'next/navigation'
 import { SplitOrganizationLayout } from '@/components/auth/split-organization-layout'
 import { OrganizationFinder } from '@/components/auth/organization-finder'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { LogoWithText } from '@/components/branding/branded-logo'
+import { getServerSession } from '@/lib/session'
 
 export const metadata: Metadata = {
   title: 'Select Organization - HelpOrbit',
   description: 'Choose your organization to access your support portal',
 }
 
-export default function SelectOrganizationPage() {
+interface SelectOrganizationPageProps {
+  searchParams: Promise<{
+    create?: string
+  }>
+}
+
+export default async function SelectOrganizationPage({ searchParams }: SelectOrganizationPageProps) {
+  // Check if user is authenticated
+  const session = await getServerSession()
+  const params = await searchParams
+  
+  if (!session?.user) {
+    // If user is not authenticated but trying to create, redirect to auth with intent
+    if (params.create === 'true') {
+      redirect('/auth?intent=create-organization&mode=signup')
+    }
+    // For regular organization selection, don't require auth (users can find orgs to join)
+  }
+
   return (
     <SplitOrganizationLayout>
-      {/* <div className="relative z-10 max-w-md">
-        Logo and Organization Info
-        <div className="mb-8">
-          <div className="space-y-6">
-            <LogoWithText
-              size="md"
-              orientation="horizontal"
-              showTagline={true}
-              className="items-center"
-            />
-          </div>
-        </div>
-      </div> */}
       {/* Organization Selection Card */}
       <Card className="border-2 border-gray-200 shadow-lg">
         <CardHeader className="text-center pb-2">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Find Your Organization
+            {params.create === 'true' ? 'Create Your Organization' : 'Find Your Organization'}
           </h1>
           <p className="text-gray-600">
-            Enter your organization name or domain to access your support portal.
+            {params.create === 'true' 
+              ? 'Set up your organization to get started with HelpOrbit.'
+              : 'Enter your organization name or domain to access your support portal.'
+            }
           </p>
         </CardHeader>
         <CardContent className="pt-6">
-          <OrganizationFinder />
+          <OrganizationFinder autoCreate={params.create === 'true'} />
         </CardContent>
       </Card>
 

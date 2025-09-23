@@ -1,9 +1,10 @@
 "use server";
 
-import { cookies, headers } from "next/headers";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
+import { requireServerSession } from "@/lib/session";
 import type {
   CreateOrganizationInput,
   UpdateOrganizationInput,
@@ -45,6 +46,9 @@ export async function createOrganizationAction(
   input: CreateOrganizationInput
 ): Promise<ActionResponse<OrganizationData>> {
   try {
+    // Ensure user is authenticated
+    const session = await requireServerSession();
+    
     const validatedInput = createOrganizationSchema.parse(input);
 
     // Check if slug is available
@@ -78,6 +82,15 @@ export async function createOrganizationAction(
     };
   } catch (error) {
     console.error("Create organization error:", error);
+    
+    // Handle authentication errors
+    if (error instanceof Error && error.message.includes('Unauthorized')) {
+      return {
+        success: false,
+        error: "Authentication required. Please sign in and try again.",
+      };
+    }
+    
     if (error instanceof z.ZodError) {
       return {
         success: false,
@@ -99,6 +112,9 @@ export async function updateOrganizationAction(
   input: UpdateOrganizationInput
 ): Promise<ActionResponse<OrganizationData>> {
   try {
+    // Ensure user is authenticated
+    const session = await requireServerSession();
+    
     const validatedInput = updateOrganizationSchema.parse(input);
 
     // If updating slug, check availability
@@ -192,6 +208,9 @@ export async function deleteOrganizationAction(
  */
 export async function listOrganizationsAction(): Promise<ActionResponse<OrganizationListResponse>> {
   try {
+    // Ensure user is authenticated
+    const session = await requireServerSession();
+    
     const result = await auth.api.listOrganizations({
       headers: await headers(),
     });
@@ -212,6 +231,15 @@ export async function listOrganizationsAction(): Promise<ActionResponse<Organiza
     };
   } catch (error) {
     console.error("List organizations error:", error);
+    
+    // Handle authentication errors
+    if (error instanceof Error && error.message.includes('Unauthorized')) {
+      return {
+        success: false,
+        error: "Authentication required. Please sign in and try again.",
+      };
+    }
+    
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to fetch organizations",
@@ -226,6 +254,9 @@ export async function getFullOrganizationAction(
   organizationId?: string
 ): Promise<ActionResponse<FullOrganization>> {
   try {
+    // Ensure user is authenticated
+    const session = await requireServerSession();
+    
     const result = await auth.api.getFullOrganization({
       query: organizationId ? { organizationId } : {},
       headers: await headers(),
@@ -244,6 +275,15 @@ export async function getFullOrganizationAction(
     };
   } catch (error) {
     console.error("Get full organization error:", error);
+    
+    // Handle authentication errors
+    if (error instanceof Error && error.message.includes('Unauthorized')) {
+      return {
+        success: false,
+        error: "Authentication required. Please sign in and try again.",
+      };
+    }
+    
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to fetch organization",
@@ -258,6 +298,9 @@ export async function setActiveOrganizationAction(
   organizationId: string | null
 ): Promise<ActionResponse<void>> {
   try {
+    // Ensure user is authenticated
+    const session = await requireServerSession();
+    
     await auth.api.setActiveOrganization({
       body: { organizationId },
       headers: await headers(),
@@ -268,6 +311,15 @@ export async function setActiveOrganizationAction(
     };
   } catch (error) {
     console.error("Set active organization error:", error);
+    
+    // Handle authentication errors
+    if (error instanceof Error && error.message.includes('Unauthorized')) {
+      return {
+        success: false,
+        error: "Authentication required. Please sign in and try again.",
+      };
+    }
+    
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to set active organization",
