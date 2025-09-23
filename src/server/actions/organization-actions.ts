@@ -1,0 +1,407 @@
+"use server";
+
+import { cookies, headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { z } from "zod";
+import { auth } from "@/lib/auth";
+import type {
+  CreateOrganizationInput,
+  UpdateOrganizationInput,
+  ActionResponse,
+  OrganizationData,
+  FullOrganization,
+  OrganizationListResponse,
+} from "@/types/auth-organization";
+
+// Validation schemas
+const createOrganizationSchema = z.object({
+  name: z.string().min(1, "Organization name is required").max(100),
+  slug: z
+    .string()
+    .min(1, "Organization slug is required")
+    .max(50)
+    .regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens"),
+  logo: z.string().url().optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
+});
+
+const updateOrganizationSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1).max(100).optional(),
+  slug: z
+    .string()
+    .min(1)
+    .max(50)
+    .regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens")
+    .optional(),
+  logo: z.string().url().optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
+});
+
+/**
+ * Create a new organization
+ */
+export async function createOrganizationAction(
+  input: CreateOrganizationInput
+): Promise<ActionResponse<OrganizationData>> {
+  try {
+    const validatedInput = createOrganizationSchema.parse(input);
+
+    // Check if slug is available
+    const slugCheck = await auth.api.checkOrganizationSlug({
+      body: { slug: validatedInput.slug },
+      headers: await headers(),
+    });
+
+    if (!slugCheck?.status) {
+      return {
+        success: false,
+        error: "Organization slug is already taken",
+      };
+    }
+
+    const result = await auth.api.createOrganization({
+      body: validatedInput,
+      headers: await headers(),
+    });
+
+    if (!result) {
+      return {
+        success: false,
+        error: "Failed to create organization",
+      };
+    }
+
+    return {
+      success: true,
+      data: result as unknown as OrganizationData,
+    };
+  } catch (error) {
+    console.error("Create organization error:", error);
+    if (error instanceof z.ZodError) {
+      return {
+        success: false,
+        error: "Invalid input data",
+        errors: error.flatten().fieldErrors,
+      };
+    }
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to create organization",
+    };
+  }
+}
+
+/**
+ * Update an organization
+ */
+export async function updateOrganizationAction(
+  input: UpdateOrganizationInput
+): Promise<ActionResponse<OrganizationData>> {
+  try {
+    const validatedInput = updateOrganizationSchema.parse(input);
+
+    // If updating slug, check availability
+    if (validatedInput.slug) {
+      const slugCheck = await auth.api.checkOrganizationSlug({
+        body: { slug: validatedInput.slug },
+        headers: await headers(),
+      });
+
+      if (!slugCheck?.status) {
+        return {
+          success: false,
+          error: "Organization slug is already taken",
+        };
+      }
+    }
+
+    const result = await auth.api.updateOrganization({
+      body: {
+        organizationId: validatedInput.id,
+        data: {
+          name: validatedInput.name,
+          slug: validatedInput.slug,
+          logo: validatedInput.logo,
+          metadata: validatedInput.metadata,
+        },
+      },
+      headers: await headers(),
+    });
+
+    if (!result) {
+      return {
+        success: false,
+        error: "Failed to update organization",
+      };
+    }
+
+    return {
+      success: true,
+      data: result as OrganizationData,
+    };
+  } catch (error) {
+    console.error("Update organization error:", error);
+    if (error instanceof z.ZodError) {
+      return {
+        success: false,
+        error: "Invalid input data",
+        errors: error.flatten().fieldErrors,
+      };
+    }
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to update organization",
+    };
+  }
+}
+
+/**
+ * Delete an organization
+ */
+export async function deleteOrganizationAction(
+  organizationId: string
+): Promise<ActionResponse<void>> {
+  try {
+    if (!organizationId) {
+      return {
+        success: false,
+        error: "Organization ID is required",
+      };
+    }
+
+    await auth.api.deleteOrganization({
+      body: { organizationId },
+      headers: await headers(),
+    });
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error("Delete organization error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to delete organization",
+    };
+  }
+}
+
+/**
+ * List user's organizations
+ */
+export async function listOrganizationsAction(): Promise<ActionResponse<OrganizationListResponse>> {
+  try {
+    const result = await auth.api.listOrganizations({
+      headers: await headers(),
+    });
+
+    if (!result) {
+      return {
+        success: false,
+        error: "Failed to fetch organizations",
+      };
+    }
+
+    return {
+      success: true,
+      data: {
+        organizations: result as OrganizationData[],
+        count: result.length,
+      },
+    };
+  } catch (error) {
+    console.error("List organizations error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to fetch organizations",
+    };
+  }
+}
+
+/**
+ * Get full organization details
+ */
+export async function getFullOrganizationAction(
+  organizationId?: string
+): Promise<ActionResponse<FullOrganization>> {
+  try {
+    const result = await auth.api.getFullOrganization({
+      query: organizationId ? { organizationId } : {},
+      headers: await headers(),
+    });
+
+    if (!result) {
+      return {
+        success: false,
+        error: "Organization not found",
+      };
+    }
+
+    return {
+      success: true,
+      data: result as FullOrganization,
+    };
+  } catch (error) {
+    console.error("Get full organization error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to fetch organization",
+    };
+  }
+}
+
+/**
+ * Set active organization
+ */
+export async function setActiveOrganizationAction(
+  organizationId: string | null
+): Promise<ActionResponse<void>> {
+  try {
+    await auth.api.setActiveOrganization({
+      body: { organizationId },
+      headers: await headers(),
+    });
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error("Set active organization error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to set active organization",
+    };
+  }
+}
+
+/**
+ * Leave organization
+ */
+export async function leaveOrganizationAction(
+  organizationId: string
+): Promise<ActionResponse<void>> {
+  try {
+    if (!organizationId) {
+      return {
+        success: false,
+        error: "Organization ID is required",
+      };
+    }
+
+    await auth.api.leaveOrganization({
+      body: { organizationId },
+      headers: await headers(),
+    });
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error("Leave organization error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to leave organization",
+    };
+  }
+}
+
+/**
+ * Check if organization slug is available
+ */
+export async function checkOrganizationSlugAction(
+  slug: string
+): Promise<ActionResponse<{ available: boolean }>> {
+  try {
+    if (!slug) {
+      return {
+        success: false,
+        error: "Slug is required",
+      };
+    }
+
+    const result = await auth.api.checkOrganizationSlug({
+      body: { slug },
+      headers: await headers(),
+    });
+
+    return {
+      success: true,
+      data: { available: result?.status || false },
+    };
+  } catch (error) {
+    console.error("Check slug error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to check slug availability",
+    };
+  }
+}
+
+/**
+ * Search organizations by name, slug, or domain
+ */
+export async function searchOrganizations(searchTerm: string) {
+  if (!searchTerm.trim()) {
+    return [];
+  }
+
+  try {
+    const { getOrganizations } = await import('@/server/db/queries');
+    const organizations = await getOrganizations();
+    
+    // Filter organizations based on search term
+    return organizations
+      .filter(org => {
+        const metadata = org.metadata ? JSON.parse(org.metadata) : {};
+        const name = org.name.toLowerCase();
+        const slug = org.slug.toLowerCase();
+        const domain = metadata.domain?.toLowerCase() || '';
+        const search = searchTerm.toLowerCase();
+        
+        return name.includes(search) || 
+               slug.includes(search) || 
+               domain.includes(search);
+      })
+      .map(org => {
+        const metadata = org.metadata ? JSON.parse(org.metadata) : {};
+        return {
+          id: org.id,
+          slug: org.slug,
+          name: org.name,
+          domain: metadata.domain,
+          logoUrl: org.logo,
+          primaryColor: metadata.primaryColor || '#6b7280',
+          isPublic: metadata.isPublic || false
+        };
+      });
+  } catch (error) {
+    console.error('Error searching organizations:', error);
+    return [];
+  }
+}
+
+/**
+ * Get organization information by slug
+ */
+export async function getOrganizationInfo(slug: string) {
+  try {
+    const { getOrganizationBySlug } = await import('@/server/db/queries');
+    const org = await getOrganizationBySlug(slug);
+    if (!org) return null;
+    
+    const metadata = org.metadata ? JSON.parse(org.metadata) : {};
+    return {
+      id: org.id,
+      slug: org.slug,
+      name: org.name,
+      domain: metadata.domain,
+      logoUrl: org.logo,
+      primaryColor: metadata.primaryColor || '#6b7280',
+      isPublic: metadata.isPublic || false
+    };
+  } catch (error) {
+    console.error('Error fetching organization:', error);
+    return null;
+  }
+}
