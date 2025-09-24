@@ -16,6 +16,16 @@ import {
 // Server action for login
 export async function loginAction(prevState: any, formData: FormData) {
   try {
+    // Check if formData is actually a FormData object
+    if (!formData || typeof formData.get !== 'function') {
+      console.error('Invalid formData object received:', formData)
+      return {
+        success: false,
+        message: 'Invalid form data received. Please try again.',
+        errors: {}
+      }
+    }
+
     // Extract form data
     const rawFormData = {
       email: formData.get('email') as string,
@@ -75,11 +85,15 @@ export async function loginAction(prevState: any, formData: FormData) {
         headers: await headers(),
       })
       console.log('Sign in result:', signInResult ? 'Success' : 'Failed', signInResult?.user ? 'Has user' : 'No user')
-    } catch (authError) {
+    } catch (authError: any) {
       console.error('Auth API error:', authError)
+      
+      // Simply display the backend error message
+      const errorMessage = authError?.body?.message || authError?.message || 'Invalid email or password. Please try again.'
+      
       return {
         success: false,
-        message: 'Invalid email or password. Please try again.',
+        message: errorMessage,
         errors: {}
       }
     }
@@ -271,6 +285,16 @@ export async function validateOrganizationAction(slug: string) {
 // Server action for sign up
 export async function signUpAction(prevState: any, formData: FormData) {
   try {
+    // Check if formData is actually a FormData object
+    if (!formData || typeof formData.get !== 'function') {
+      console.error('Invalid formData object received:', formData)
+      return {
+        success: false,
+        message: 'Invalid form data received. Please try again.',
+        errors: {}
+      }
+    }
+
     // Extract form data
     const rawFormData = {
       email: formData.get('email') as string,
@@ -279,6 +303,14 @@ export async function signUpAction(prevState: any, formData: FormData) {
       organizationSlug: formData.get('organizationSlug') as string,
       intent: formData.get('intent') as string,
     }
+
+    console.log('Sign up raw form data:', { 
+      email: rawFormData.email, 
+      hasPassword: !!rawFormData.password, 
+      name: rawFormData.name,
+      organizationSlug: rawFormData.organizationSlug, 
+      intent: rawFormData.intent 
+    })
 
     // For general auth flow (intent=create-organization), we don't need organizationSlug
     const signUpSchemaToUse = rawFormData.intent === 'create-organization'
@@ -308,15 +340,29 @@ export async function signUpAction(prevState: any, formData: FormData) {
         : `${process.env.NEXT_PUBLIC_APP_URL}/select-organization`
 
     // Sign up with Better Auth
-    const signUpResult = await auth.api.signUpEmail({
-      body: {
-        email,
-        password,
-        name,
-        callbackURL
-      },
-      headers: await headers(),
-    })
+    let signUpResult;
+    try {
+      signUpResult = await auth.api.signUpEmail({
+        body: {
+          email,
+          password,
+          name,
+          callbackURL
+        },
+        headers: await headers(),
+      })
+    } catch (authError: any) {
+      console.error('Better Auth signup error:', authError)
+      
+      // Simply display the backend error message
+      const errorMessage = authError?.body?.message || authError?.message || 'Failed to create account. Please try again.'
+      
+      return {
+        success: false,
+        message: errorMessage,
+        errors: {}
+      }
+    }
 
     if (!signUpResult) {
       return {

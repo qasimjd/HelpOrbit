@@ -2,7 +2,16 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    domains: ["avatar.vercel.sh", "avatars.githubusercontent.com"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "avatar.vercel.sh",
+      },
+      {
+        protocol: "https",
+        hostname: "avatars.githubusercontent.com",
+      },
+    ],
   },
 };
 

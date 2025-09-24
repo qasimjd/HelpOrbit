@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Building, Loader2, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -26,12 +25,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { createOrganizationAction, checkOrganizationSlugAction } from "@/server/actions/organization-actions";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useSession } from "@/lib/auth-client";
 import { AuthPromptDialog } from "@/components/auth/auth-prompt-dialog";
 import { createOrganizationSchema, type CreateOrganizationData } from "@/schemas/organization";
+import { generateDefaultLogo, getInitials } from "@/lib/utils";
+import { BrandedLogo } from "../branding/branded-logo";
 
 type CreateOrganizationForm = CreateOrganizationData;
 
@@ -50,6 +50,8 @@ export function CreateOrganizationDialog({
   const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
   const [checkingSlug, setCheckingSlug] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const [defaultLogo] = useState(() => generateDefaultLogo());
+
 
   // Check if user is authenticated
   const { data: session, isPending } = useSession();
@@ -113,10 +115,14 @@ export function CreateOrganizationDialog({
     setIsSubmitting(true);
     try {
       const metadata = data.description ? { description: data.description } : undefined;
+
+      // Generate default logo if no logo is provided
+      const logoUrl = data.logo || generateDefaultLogo();
+
       const result = await createOrganizationAction({
         name: data.name,
         slug: data.slug,
-        logo: data.logo || undefined,
+        logo: logoUrl,
         metadata,
       });
 
@@ -138,15 +144,6 @@ export function CreateOrganizationDialog({
     }
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((word) => word.charAt(0))
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
   const slugStatus = () => {
     if (!watchedSlug) return null;
     if (checkingSlug) return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
@@ -161,7 +158,7 @@ export function CreateOrganizationDialog({
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Building className="h-5 w-5" />
+              <BrandedLogo size="sm" />
               Create Organization
             </DialogTitle>
             <DialogDescription>
@@ -171,156 +168,155 @@ export function CreateOrganizationDialog({
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="space-y-4">
-              {/* Organization Preview */}
-              <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={form.watch("logo")} />
-                  <AvatarFallback>
-                    {watchedName ? getInitials(watchedName) : <Building className="h-6 w-6" />}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-semibold truncate">
-                    {watchedName || "Organization Name"}
-                  </h4>
-                  <p className="text-sm text-muted-foreground truncate">
-                    @{watchedSlug || "organization-slug"}
-                  </p>
+              <div className="space-y-4">
+                {/* Organization Preview */}
+                <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
+                  <Avatar className="h-12 w-12 rounded-lg">
+                    <AvatarImage
+                      src={form.watch("logo") || defaultLogo}
+                    />
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold truncate">
+                      {watchedName || "Organization Name"}
+                    </h4>
+                    <p className="text-sm text-muted-foreground truncate">
+                      @{watchedSlug || "organization-slug"}
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Organization Name *</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Enter organization name"
-                        {...field}
-                        disabled={isSubmitting}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      The display name for your organization
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="slug"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Organization Slug *</FormLabel>
-                    <FormControl>
-                      <div className="relative">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Organization Name *</FormLabel>
+                      <FormControl>
                         <Input
-                          placeholder="organization-slug"
+                          placeholder="Enter organization name"
                           {...field}
                           disabled={isSubmitting}
-                          className="pr-10"
                         />
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                          {slugStatus()}
+                      </FormControl>
+                      <FormDescription>
+                        The display name for your organization
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="slug"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Organization Slug *</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            placeholder="organization-slug"
+                            {...field}
+                            disabled={isSubmitting}
+                            className="pr-10"
+                          />
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                            {slugStatus()}
+                          </div>
                         </div>
-                      </div>
-                    </FormControl>
-                    <FormDescription>
-                      Used in URLs and must be unique. Only lowercase letters, numbers, and hyphens.
-                    </FormDescription>
-                    {slugAvailable === false && (
-                      <div className="text-sm text-red-600">
-                        This slug is already taken
-                      </div>
-                    )}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      </FormControl>
+                      <FormDescription>
+                        Used in URLs and must be unique. Only lowercase letters, numbers, and hyphens.
+                      </FormDescription>
+                      {slugAvailable === false && (
+                        <div className="text-sm text-red-600">
+                          This slug is already taken
+                        </div>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="logo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Logo URL (Optional)</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="https://example.com/logo.png"
-                        {...field}
-                        disabled={isSubmitting}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      URL to your organization's logo image
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="logo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Logo URL (Optional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="https://example.com/logo.png"
+                          {...field}
+                          disabled={isSubmitting}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        URL to your organization's logo image. If left empty, a colorful logo with initials will be generated automatically.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Describe your organization..."
-                        rows={3}
-                        {...field}
-                        disabled={isSubmitting}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      A brief description of your organization
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {form.formState.errors.root && (
-              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
-                {form.formState.errors.root.message}
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description (Optional)</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Describe your organization..."
+                          rows={3}
+                          {...field}
+                          disabled={isSubmitting}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        A brief description of your organization
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-            )}
 
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting || slugAvailable === false}
-              >
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Create Organization
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+              {form.formState.errors.root && (
+                <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+                  {form.formState.errors.root.message}
+                </div>
+              )}
 
-    {/* Authentication Prompt Dialog */}
-    <AuthPromptDialog
-      open={showAuthPrompt}
-      onOpenChange={setShowAuthPrompt}
-      action="create-organization"
-    />
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || slugAvailable === false}
+                >
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Create Organization
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Authentication Prompt Dialog */}
+      <AuthPromptDialog
+        open={showAuthPrompt}
+        onOpenChange={setShowAuthPrompt}
+        action="create-organization"
+      />
     </>
   );
 }

@@ -2,7 +2,8 @@
 
 import React, { useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, Building, ArrowRight, Loader2, Plus } from 'lucide-react'
+import Link from 'next/link'
+import { Search, ArrowRight, Loader2, Plus } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -25,24 +26,17 @@ interface OrganizationResult {
 interface OrganizationFinderProps {
   onOrganizationSelect?: (org: OrganizationResult) => void
   className?: string
-  autoCreate?: boolean // Whether to auto-open create dialog for authenticated users
 }
 
-export function OrganizationFinder({ onOrganizationSelect, className, autoCreate }: OrganizationFinderProps) {
+export function OrganizationFinder({ onOrganizationSelect, className }: OrganizationFinderProps) {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [selectedOrg, setSelectedOrg] = useState<OrganizationResult | null>(null)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [organizations, setOrganizations] = useState<OrganizationResult[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
 
-  // Auto-open create dialog if autoCreate is true and user comes from auth flow
-  React.useEffect(() => {
-    if (autoCreate) {
-      setShowCreateDialog(true)
-    }
-  }, [autoCreate])
+
 
   // Fetch organizations based on search term
   const handleSearch = useCallback(async (term: string) => {
@@ -78,17 +72,12 @@ export function OrganizationFinder({ onOrganizationSelect, className, autoCreate
   }, [searchTerm, handleSearch])
 
   const handleOrganizationSelect = useCallback(async (org: OrganizationResult) => {
-    setSelectedOrg(org)
     setIsLoading(true)
 
     try {
-      console.log('Selecting organization:', org)
-      // In real app, this would validate the organization and set session/context
       if (onOrganizationSelect) {
         onOrganizationSelect(org)
       } else {
-        // Navigate to organization login
-        console.log('Navigating to:', `/org/${org.slug}/login`)
         router.push(`/org/${org.slug}/login`)
       }
     } catch (error) {
@@ -98,60 +87,34 @@ export function OrganizationFinder({ onOrganizationSelect, className, autoCreate
     }
   }, [onOrganizationSelect, router])
 
-  const handleDirectEntry = useCallback(async () => {
-    const slug = searchTerm.trim().toLowerCase()
-    if (!slug) return
-
-    setIsLoading(true)
-
-    try {
-      console.log('Direct entry - checking organization exists:', slug)
-      
-      // Import and validate organization exists
-      const { validateOrganizationAction } = await import('@/server/actions/auth-actions')
-      const { exists, organization } = await validateOrganizationAction(slug)
-      
-      if (!exists || !organization) {
-        alert(`Organization "${slug}" not found. Please check the organization name and try again.`)
-        return
-      }
-      
-      console.log('Organization found, navigating to login:', organization)
-      router.push(`/org/${slug}/login`)
-    } catch (error) {
-      console.error('Failed to validate or navigate to organization:', error)
-      alert('Failed to find organization. Please try again.')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [searchTerm, router])
 
   return (
     <div className={cn("w-full space-y-6", className)}>
       {/* Search Input */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
         <Input
           type="text"
           placeholder="Enter organization name or domain..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10 py-3 text-lg border-2 border-gray-200 focus:border-blue-500 transition-colors"
+          className="pl-10 py-3 text-lg border-2 transition-colors"
           disabled={isLoading}
         />
       </div>
 
       {/* Create New Organization Button */}
-      <div className="text-center">
-        <Button
-          onClick={() => setShowCreateDialog(true)}
-          variant="outline"
-          className="flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Create New Organization
-        </Button>
-      </div>
+      {!searchTerm.trim() && (
+        <Link href="/create-organization">
+          <Button
+            variant="outline"
+            className="flex items-center gap-2 w-full"
+          >
+            <Plus className="w-4 h-4" />
+            Create New Organization
+          </Button>
+        </Link>
+      )}
 
       {/* Search Results */}
       {searchTerm.trim() && (
@@ -159,30 +122,23 @@ export function OrganizationFinder({ onOrganizationSelect, className, autoCreate
           {searchLoading ? (
             <div className="flex flex-col items-center py-8">
               <Loader2 className="w-10 h-10 animate-spin text-primary mb-3" />
-              <p className="text-base text-gray-500 font-medium">Searching organizations...</p>
+              <p className="text-base text-muted-foreground font-medium">Searching organizations...</p>
             </div>
           ) : organizations.length > 0 ? (
             <>
-              <h3 className="text-base font-semibold mb-2">
+              <h3 className="text-base font-semibold mb-2 text-foreground">
                 Select your organization
               </h3>
-              <div className="space-y-3 max-h-72 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-transparent">
+              <div className="space-y-3 max-h-60 overflow-y-auto">
                 {organizations.map((org: OrganizationResult) => (
                   <Card
                     key={org.id}
-                    className={cn(
-                      "cursor-pointer transition-all hover:shadow-lg border-2 hover:border",
-                      selectedOrg?.id === org.id && `ring-2 ring-${org.primaryColor} border-${org.primaryColor}`
-                    )}
+                    className="cursor-pointer transition-all shadow-lg"
                     onClick={() => handleOrganizationSelect(org)}
                   >
-                    <CardContent className="p-5">
+                    <CardContent className="p-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
-                          <div
-                            className="w-4 h-4 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: org.primaryColor }}
-                          />
                           <div className="w-10 h-10 relative rounded-full overflow-hidden border">
                             <Image
                               src={org.logoUrl ?? '/logos/helporbit-logo.svg'}
@@ -192,21 +148,21 @@ export function OrganizationFinder({ onOrganizationSelect, className, autoCreate
                             />
                           </div>
                           <div>
-                            <h4 className="font-semibold text-gray-900 leading-tight">
+                            <h4 className="font-semibold text-foreground leading-tight">
                               {org.name}
                             </h4>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-muted-foreground">
                               {org.domain || `@${org.slug}`}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
                           {org.isPublic && (
-                            <Badge variant="secondary" className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700 border border-blue-200">
+                            <Badge variant="secondary" className="text-xs px-2 py-1 rounded-full">
                               Public
                             </Badge>
                           )}
-                          <ArrowRight className="w-5 h-5 text-blue-400" />
+                          <ArrowRight className="w-5 h-5 text-muted-foreground" />
                         </div>
                       </div>
                     </CardContent>
@@ -215,32 +171,14 @@ export function OrganizationFinder({ onOrganizationSelect, className, autoCreate
               </div>
             </>
           ) : (
-            <div className="flex flex-col items-center py-8 space-y-5 bg-blue-50 rounded-xl border border-blue-100">
-              <Building className="w-14 h-14 text-blue-300 mb-2" />
+            <div className="flex flex-col items-center py-8 space-y-5 bg-muted/50 rounded-xl border">
               <div className="text-center">
-                <h3 className="text-base font-semibold text-blue-700 mb-1">
+                <h3 className="text-base font-semibold text-foreground mb-1">
                   No organizations found
                 </h3>
-                <p className="text-sm text-gray-500 mb-4">
+                <p className="text-sm text-muted-foreground mb-4">
                   Can't find your organization? Try entering the exact organization code.
                 </p>
-                <Button
-                  onClick={handleDirectEntry}
-                  disabled={isLoading || !searchTerm.trim()}
-                  className="btn-brand-primary px-6 py-2 text-base font-semibold rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Loading...
-                    </>
-                  ) : (
-                    <>
-                      Continue with "{searchTerm.trim()}"
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </>
-                  )}
-                </Button>
               </div>
             </div>
           )}
@@ -250,9 +188,6 @@ export function OrganizationFinder({ onOrganizationSelect, className, autoCreate
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
         onSuccess={(organization) => {
-          // Handle successful organization creation
-          console.log('Organization created:', organization);
-          // Optionally navigate to the new organization
           if (organization?.slug) {
             router.push(`/org/${organization.slug}/dashboard`);
           }

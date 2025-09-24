@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { BrandedLogo } from '../branding/branded-logo'
 
 interface AuthPromptDialogProps {
   open: boolean
@@ -72,7 +73,7 @@ export function AuthPromptDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {action === 'create-organization' ? (
-              <Building className="w-5 h-5 text-blue-600" />
+              <BrandedLogo size='sm'/>
             ) : (
               <UserPlus className="w-5 h-5 text-blue-600" />
             )}
@@ -85,11 +86,11 @@ export function AuthPromptDialog({
 
         <div className="space-y-4 pt-4">
           {/* Sign In Option */}
-          <Card className="border-2 hover:border-blue-200 transition-colors cursor-pointer" 
+          <Card className="border-2 hover:shadow-md transition-colors cursor-pointer" 
                 onClick={handleLogin}>
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center gap-2">
-                <LogIn className="w-5 h-5 text-blue-600" />
+                <LogIn className="w-5 h-5" />
                 Sign In
               </CardTitle>
               <CardDescription>
@@ -108,11 +109,11 @@ export function AuthPromptDialog({
           </Card>
 
           {/* Sign Up Option */}
-          <Card className="border-2 hover:border-green-200 transition-colors cursor-pointer"
+          <Card className="border-2 hover:shadow-md transition-colors cursor-pointer"
                 onClick={handleSignUp}>
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-green-600" />
+                <UserPlus className="w-5 h-5" />
                 Create Account
               </CardTitle>
               <CardDescription>

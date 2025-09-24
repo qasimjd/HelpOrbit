@@ -9,6 +9,7 @@ interface BrandedLogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl'
   showFallback?: boolean
   className?: string
+  helpOrbit?: boolean
 }
 
 const sizeClasses = {
@@ -24,13 +25,13 @@ interface BrandedTextLogoProps {
   className?: string
 }
 
-export function BrandedLogo({ size = 'md', showFallback = true, className }: BrandedLogoProps) {
+export function BrandedLogo({ size = 'md', showFallback = true, className, helpOrbit }: BrandedLogoProps) {
   const { organization, branding } = useTheme()
   const [imageError, setImageError] = React.useState(false)
 
   const logoUrl = branding.logoUrl || organization?.logoUrl || '/logos/helporbit-logo.svg'
   const altText = organization?.name ? `${organization.name} logo` : 'HelpOrbit logo'
-  
+
   // Reset error state when logoUrl changes
   React.useEffect(() => {
     setImageError(false)
@@ -42,7 +43,7 @@ export function BrandedLogo({ size = 'md', showFallback = true, className }: Bra
     <div className={cn("relative flex items-center justify-center", sizeClasses[size], className)}>
       {!shouldShowFallback ? (
         <Image
-          src={logoUrl}
+          src={helpOrbit ? '/logos/helporbit-logo.svg' : logoUrl}
           alt={altText}
           fill
           className="object-contain rounded-lg"
@@ -56,7 +57,7 @@ export function BrandedLogo({ size = 'md', showFallback = true, className }: Bra
         />
       ) : (
         showFallback && (
-          <div 
+          <div
             className={cn(
               "flex items-center justify-center rounded-lg text-white font-semibold bg-brand-primary shadow-sm",
               sizeClasses[size]
@@ -115,9 +116,9 @@ interface LogoWithTextProps {
   onClick?: () => void
 }
 
-export function LogoWithText({ 
-  size = 'md', 
-  orientation = 'horizontal', 
+export function LogoWithText({
+  size = 'md',
+  orientation = 'horizontal',
   showTagline = false,
   showLogo = true,
   interactive = false,
@@ -125,7 +126,7 @@ export function LogoWithText({
   onClick
 }: LogoWithTextProps) {
   const { organization } = useTheme()
-  
+
   const isVertical = orientation === 'vertical'
   const baseClasses = cn(
     "flex items-center",
@@ -167,9 +168,9 @@ export function OrgLogoWithText(props: Omit<LogoWithTextProps, 'showLogo'>) {
 }
 
 // Compact variant for headers/navigation
-export function CompactOrgLogo({ 
+export function CompactOrgLogo({
   className,
-  onClick 
+  onClick
 }: Pick<LogoWithTextProps, 'className' | 'onClick'>) {
   return (
     <LogoWithText
@@ -184,8 +185,8 @@ export function CompactOrgLogo({
 }
 
 // Full branding variant for landing pages
-export function FullBrandingLogo({ 
-  className 
+export function FullBrandingLogo({
+  className
 }: Pick<LogoWithTextProps, 'className'>) {
   return (
     <LogoWithText

@@ -1,41 +1,70 @@
 "use client"
 
-import React, { useActionState, useState } from 'react'
-import Link from 'next/link'
-import { Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react'
-import { SwitchOrganizationButton } from '@/components/auth/switch-organization-button'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { loginAction } from '@/server/actions/auth-actions'
-import { cn } from '@/lib/utils'
+import React, { useState } from "react"
+import Link from "next/link"
+import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react"
+import { SwitchOrganizationButton } from "@/components/auth/switch-organization-button"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { loginAction } from "@/server/actions/auth-actions"
+import { cn } from "@/lib/utils"
 
 interface LoginFormProps {
   organizationSlug?: string
   className?: string
-  intent?: string
   showModeSwitch?: boolean
 }
 
-export function LoginForm({ organizationSlug, className, intent, showModeSwitch }: LoginFormProps) {
+export function LoginForm({
+  organizationSlug,
+  className,
+  showModeSwitch,
+}: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
-  
-  const [state, formAction, isPending] = useActionState(loginAction, {
+  const [isPending, setIsPending] = useState(false)
+  const [state, setState] = useState({
     success: false,
-    errors: {},
-    message: ''
+    errors: {} as Record<string, string[]>,
+    message: "",
   })
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setIsPending(true)
+
+    const formData = new FormData(e.currentTarget)
+    
+    // Add organizationSlug and intent to formData if needed
+    if (organizationSlug) {
+      formData.set('organizationSlug', organizationSlug)
+    }
+    
+    // Add intent - if no org slug, assume create-organization flow
+    formData.set('intent', organizationSlug ? 'join-organization' : 'create-organization')
+
+    try {
+      const result = await loginAction(null, formData)
+      setState(result)
+    } catch (error) {
+      console.error('Form submission error:', error)
+      setState({
+        success: false,
+        errors: {},
+        message: 'An unexpected error occurred. Please try again.',
+      })
+    } finally {
+      setIsPending(false)
+    }
+  }
 
   return (
     <div className={cn("space-y-6", className)}>
-      <form action={formAction} className="space-y-4">
-        {/* Hidden fields for organization slug and intent */}
-        {organizationSlug && <input type="hidden" name="organizationSlug" value={organizationSlug} />}
-        <input type="hidden" name="intent" value={intent || ""} />
-        
+      <form onSubmit={handleSubmit} className="space-y-4">
+
         {/* Error Message */}
         {!state.success && state.message && (
           <Alert variant="destructive">
@@ -46,7 +75,7 @@ export function LoginForm({ organizationSlug, className, intent, showModeSwitch 
 
         {/* Email Field */}
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+          <Label htmlFor="email" className="text-sm font-medium text-foreground">
             Email address
           </Label>
           <Input
@@ -57,19 +86,23 @@ export function LoginForm({ organizationSlug, className, intent, showModeSwitch 
             required
             placeholder="Enter your email"
             className={cn(
-              "input-brand transition-colors",
-              state.errors?.email && "border-red-500 focus:border-red-500"
+              "transition-colors",
+              state.errors?.email &&
+              "border-destructive focus-visible:ring-destructive"
             )}
             disabled={isPending}
           />
           {state.errors?.email && (
-            <p className="text-sm text-red-600">{state.errors.email[0]}</p>
+            <p className="text-sm text-destructive">{state.errors.email[0]}</p>
           )}
         </div>
 
         {/* Password Field */}
         <div className="space-y-2">
-          <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+          <Label
+            htmlFor="password"
+            className="text-sm font-medium text-foreground"
+          >
             Password
           </Label>
           <div className="relative">
@@ -81,14 +114,15 @@ export function LoginForm({ organizationSlug, className, intent, showModeSwitch 
               required
               placeholder="Enter your password"
               className={cn(
-                "input-brand pr-10 transition-colors",
-                state.errors?.password && "border-red-500 focus:border-red-500"
+                "pr-10 transition-colors",
+                state.errors?.password &&
+                "border-destructive focus-visible:ring-destructive"
               )}
               disabled={isPending}
             />
             <button
               type="button"
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               onClick={() => setShowPassword(!showPassword)}
               disabled={isPending}
             >
@@ -100,7 +134,7 @@ export function LoginForm({ organizationSlug, className, intent, showModeSwitch 
             </button>
           </div>
           {state.errors?.password && (
-            <p className="text-sm text-red-600">{state.errors.password[0]}</p>
+            <p className="text-sm text-destructive">{state.errors.password[0]}</p>
           )}
         </div>
 
@@ -113,36 +147,33 @@ export function LoginForm({ organizationSlug, className, intent, showModeSwitch 
               checked={rememberMe}
               onCheckedChange={(checked) => setRememberMe(checked === true)}
               disabled={isPending}
-              className="checkbox-brand"
             />
-            <Label 
-              htmlFor="remember-me" 
-              className="text-sm text-gray-600 cursor-pointer"
+            <Label
+              htmlFor="remember-me"
+              className="text-sm text-muted-foreground cursor-pointer"
             >
               Remember me
             </Label>
             {/* Hidden input for form submission */}
-            <input 
-              type="hidden" 
-              name="rememberMe" 
-              value={rememberMe ? 'on' : 'off'} 
+            <input
+              type="hidden"
+              name="rememberMe"
+              value={rememberMe ? "on" : "off"}
             />
           </div>
-          {organizationSlug && (
-            <Link
-              href={`/org/${organizationSlug}/forgot-password`}
-              className="text-sm link-brand"
-            >
-              Forgot password?
-            </Link>
-          )}
+          <Link
+            href={organizationSlug ? `/org/${organizationSlug}/forgot-password` : "/forgot-password"}
+            className="text-sm text-primary hover:underline"
+          >
+            Forgot password?
+          </Link>
         </div>
 
         {/* Submit Button */}
         <Button
           type="submit"
           disabled={isPending}
-          className="w-full btn-brand-primary text-base font-medium"
+          className="w-full"
         >
           {isPending ? (
             <>
@@ -150,19 +181,19 @@ export function LoginForm({ organizationSlug, className, intent, showModeSwitch 
               Signing in...
             </>
           ) : (
-            'Sign in'
+            "Sign in"
           )}
         </Button>
       </form>
 
       {/* Mode Switch */}
       {showModeSwitch && (
-        <div className="text-center text-sm text-gray-500">
+        <div className="text-center text-sm text-muted-foreground">
           <p>
-            Don't have an account?{' '}
+            Don't have an account?{" "}
             <Link
-              href={intent ? `/auth?intent=${intent}&mode=signup` : '/auth?mode=signup'}
-              className="link-brand font-medium"
+              href="/signup"
+              className="font-medium text-primary hover:underline"
             >
               Create account
             </Link>
@@ -173,27 +204,12 @@ export function LoginForm({ organizationSlug, className, intent, showModeSwitch 
       {/* Organization-specific content */}
       {organizationSlug && !showModeSwitch && (
         <>
-          {/* Demo Credentials Info */}
-          {/* <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <h4 className="text-sm font-medium text-blue-800 mb-2">
-              Demo Credentials
-            </h4>
-            <p className="text-xs text-blue-600 mb-2">
-              For testing purposes, use:
-            </p>
-            <div className="text-xs font-mono text-blue-700 space-y-1">
-              <div><strong>Email:</strong> demo@example.com</div>
-              <div><strong>Password:</strong> password</div>
-            </div>
-          </div> */}
-
-          {/* Footer Links */}
-          <div className="text-center text-sm text-gray-500 space-y-2">
+          <div className="text-center text-sm text-muted-foreground space-y-2">
             <p>
-              Don't have an account?{' '}
+              Don't have an account?{" "}
               <Link
                 href={`/org/${organizationSlug}/register`}
-                className="link-brand font-medium"
+                className="font-medium text-primary hover:underline"
               >
                 Contact your administrator
               </Link>

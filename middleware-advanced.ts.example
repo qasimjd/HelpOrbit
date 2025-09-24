@@ -1,0 +1,112 @@
+// Alternative middleware for Next.js 15.2.0+ with Node.js runtime
+// This version performs full session validation but requires runtime: "nodejs" in config
+// 
+// Uncomment and use this version if you want full session validation in middleware
+// Remember to update the config object at the bottom to include: runtime: "nodejs"
+
+/*
+import { NextRequest, NextResponse } from "next/server";
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
+
+export async function middleware(request: NextRequest) {
+    const { pathname } = request.nextUrl;
+    
+    // Skip middleware for API routes and static files
+    if (pathname.startsWith('/api/') || 
+        pathname.startsWith('/_next') || 
+        pathname.includes('.')) {
+        return NextResponse.next();
+    }
+    
+    // Get full session with validation
+    const session = await auth.api.getSession({
+        headers: await headers()
+    });
+    const isAuthenticated = !!session;
+    
+    // Define route patterns
+    const isAuthRoute = pathname.startsWith('/login') || 
+                       pathname.startsWith('/signup') || 
+                       pathname.startsWith('/create-organization') ||
+                       pathname.startsWith('/select-organization') ||
+                       pathname.match(/^\/org\/[^\/]+\/(login|forgot-password)$/);
+    
+    const isOrganizationProtectedRoute = pathname.match(/^\/org\/[^\/]+\/(dashboard|members|settings|tickets)/);
+    const isGeneralProtectedRoute = pathname.startsWith('/organizations');
+    const isProtectedRoute = isOrganizationProtectedRoute || isGeneralProtectedRoute;
+    
+    // Handle authentication logic
+    if (isAuthenticated && session) {
+        // If authenticated and trying to access auth pages, redirect to select organization
+        if (isAuthRoute && !pathname.match(/^\/org\/[^\/]+\/(login|forgot-password)$/)) {
+            return NextResponse.redirect(new URL('/select-organization', request.url));
+        }
+        
+        // If trying to access root, redirect to select organization
+        if (pathname === '/') {
+            return NextResponse.redirect(new URL('/select-organization', request.url));
+        }
+        
+        // For organization-specific routes, check if user has access
+        if (isOrganizationProtectedRoute) {
+            const orgSlugMatch = pathname.match(/^\/org\/([^\/]+)/);
+            if (orgSlugMatch) {
+                const orgSlug = orgSlugMatch[1];
+                
+                try {
+                    const userOrgs = await auth.api.listOrganizations({
+                        headers: await headers()
+                    });
+                    
+                    const hasAccess = userOrgs?.some((org: any) => org.slug === orgSlug);
+                    
+                    if (!hasAccess) {
+                        return NextResponse.redirect(new URL('/select-organization', request.url));
+                    }
+                } catch (error) {
+                    // If there's an error checking organizations, redirect to select org
+                    return NextResponse.redirect(new URL('/select-organization', request.url));
+                }
+            }
+        }
+        
+        // Allow authenticated users to access organization login/forgot-password 
+        if (pathname.match(/^\/org\/[^\/]+\/(login|forgot-password)$/)) {
+            return NextResponse.next();
+        }
+    } else {
+        // If not authenticated and trying to access protected routes
+        if (isProtectedRoute) {
+            // For organization-specific protected routes, redirect to that org's login
+            if (isOrganizationProtectedRoute) {
+                const orgSlugMatch = pathname.match(/^\/org\/([^\/]+)/);
+                if (orgSlugMatch) {
+                    const orgSlug = orgSlugMatch[1];
+                    return NextResponse.redirect(new URL(`/org/${orgSlug}/login`, request.url));
+                }
+            }
+            
+            // For general protected routes, redirect to general login
+            return NextResponse.redirect(new URL('/login', request.url));
+        }
+        
+        // If trying to access root while not authenticated, redirect to login
+        if (pathname === '/') {
+            return NextResponse.redirect(new URL('/login', request.url));
+        }
+    }
+    
+    return NextResponse.next();
+}
+
+export const config = {
+    runtime: "nodejs", // Required for Next.js 15.2.0+ to use Node.js APIs
+    matcher: [
+        // Skip Next.js internals and all static files, unless found in search params
+        '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+        // Always run for API routes
+        '/(api|trpc)(.*)',
+    ],
+};
+*/

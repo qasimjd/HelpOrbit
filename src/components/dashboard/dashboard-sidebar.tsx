@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { 
@@ -10,7 +10,8 @@ import {
   FileTextIcon,
   BuildingIcon,
   ChevronDownIcon,
-  UsersIcon
+  UsersIcon,
+  SettingsIcon
 } from 'lucide-react'
 import { BrandedLogo } from '@/components/branding/branded-logo'
 import { useTheme } from '@/components/branding/theme-provider'
@@ -68,9 +69,16 @@ const organizationMenu = [
     icon: MailIcon,
     description: 'Send invitation'
   },
+  { 
+    name: 'Billing', 
+    href: '/dashboard/billing',
+    icon: BuildingIcon,
+    description: 'Manage billing and subscriptions'
+  },
 ]
 
 export function DashboardSidebar({ organizationSlug }: DashboardSidebarProps) {
+  var orgSlug = organizationSlug
   const pathname = usePathname()
   const { organization, branding } = useTheme()
   const { state } = useSidebar()

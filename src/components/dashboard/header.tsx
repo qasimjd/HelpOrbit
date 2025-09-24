@@ -131,11 +131,11 @@ export function Header({ organizationSlug, organizationName, className }: Header
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative h-6 w-6 rounded-full">
+              <Button variant="ghost" size="icon" className="relative size-6 rounded-full">
                 <Avatar>
                   <AvatarImage src={user?.image || undefined} alt={user?.name || 'User'} />
                   <AvatarFallback
-                    className="bg-brand-surface text-brand-primary text-xs ring-2"
+                    className="bg-brand-surface text-brand-primary text-xs ring-1"
                   >
                     {user?.name ? getUserInitials(user.name) : 'U'}
                   </AvatarFallback>

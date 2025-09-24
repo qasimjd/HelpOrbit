@@ -219,7 +219,7 @@ export async function listOrganizationsAction(): Promise<ActionResponse<Organiza
         error: "Authentication required. Please sign in and try again.",
       };
     }
-    
+
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to fetch organizations",
@@ -228,6 +228,29 @@ export async function listOrganizationsAction(): Promise<ActionResponse<Organiza
 }
 
 /**
+ * List user's organizations with member data
+ */
+export async function listUserOrganizationsAction(): Promise<ActionResponse<any[]>> {
+  try {
+    // Ensure user is authenticated
+    const session = await requireServerSession();
+    
+    const { getUserOrganizations } = await import('@/server/db/queries');
+    const userOrgs = await getUserOrganizations(session.user.id);
+
+    return {
+      success: true,
+      data: userOrgs,
+    };
+  } catch (error) {
+    console.error("List user organizations error:", error);
+    
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to fetch user organizations",
+    };
+  }
+}/**
  * Get full organization details
  */
 export async function getFullOrganizationAction(

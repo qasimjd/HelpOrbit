@@ -78,7 +78,7 @@ export function SwitchOrganizationButton({
     <Link
       href={href}
       onClick={handleSwitchOrganization}
-      className={cn("link-brand", className)}
+      className={cn("", className)}
     >
       {children}
     </Link>

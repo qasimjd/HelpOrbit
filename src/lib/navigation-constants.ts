@@ -37,10 +37,10 @@ export const MAIN_NAVIGATION: NavigationItem[] = [
     description: 'Manage support tickets'
   },
   { 
-    name: 'Users', 
-    href: '/dashboard/users', 
+    name: 'Members', 
+    href: '/dashboard/members', 
     icon: UsersIcon,
-    description: 'User management'
+    description: 'Members management'
   },
 ]
 
