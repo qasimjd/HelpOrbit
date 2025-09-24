@@ -1,5 +1,0 @@
-<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="6" y="6" width="52" height="52" rx="8" fill="#E5E7EB" stroke="#9CA3AF" stroke-width="2"/>
-  <circle cx="32" cy="32" r="16" fill="#6B7280"/>
-  <text x="32" y="38" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white">ORG</text>
-</svg>

@@ -1,6 +1,6 @@
 import React from 'react'
 import { notFound } from 'next/navigation'
-import { validateOrganizationAction } from '@/server/actions/server-actions'
+import { validateOrganizationAction } from '@/server/actions/auth-actions'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 
 interface DashboardLayoutWrapperProps {

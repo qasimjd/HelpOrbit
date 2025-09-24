@@ -24,12 +24,19 @@ export function LogoutButton({
       await authClient.signOut({
         fetchOptions: {
           onSuccess: () => {
-            router.push('/select-organization')
+            // Clear any cached data and redirect to login/organization selection
+            router.push('/auth?mode=login')
+          },
+          onError: () => {
+            // Even if there's an error, redirect to auth page
+            router.push('/auth?mode=login')
           },
         },
       })
     } catch (error) {
       console.error('Logout error:', error)
+      // Fallback redirect even if logout fails
+      router.push('/auth?mode=login')
     }
   }
 

@@ -4,23 +4,29 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { 
-  TicketIcon, 
-  HomeIcon, 
-  UsersIcon, 
-  SettingsIcon,
-  LogOutIcon,
-  PlusIcon,
   ChevronUpIcon,
   MailIcon,
   BarChart3Icon,
   FileTextIcon,
   BuildingIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  UsersIcon
 } from 'lucide-react'
 import { BrandedLogo } from '@/components/branding/branded-logo'
 import { useTheme } from '@/components/branding/theme-provider'
 import { Button } from '@/components/ui/button'
+import { SwitchOrganizationButton } from '@/components/auth/switch-organization-button'
+import { LogoutButton } from '@/components/auth/logout-button'
 import { Separator } from '@/components/ui/separator'
+import { useUser, useOrganizationPermissions } from '@/contexts/user-context'
+import { 
+  MAIN_NAVIGATION, 
+  SETTINGS_NAVIGATION, 
+  QUICK_ACTIONS,
+  buildHref,
+  isNavigationActive,
+  filterNavigationByRole
+} from '@/lib/navigation-constants'
 import { 
   Sidebar,
   SidebarContent,
@@ -42,56 +48,19 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { OrganizationSelector } from '@/components/auth/organization-selector'
 import { cn } from '@/lib/utils'
 
 interface DashboardSidebarProps {
   organizationSlug: string
 }
 
-const navigation = [
-  { 
-    name: 'Overview', 
-    href: '/dashboard', 
-    icon: HomeIcon,
-    description: 'Dashboard overview'
-  },
-  { 
-    name: 'Tickets', 
-    href: '/dashboard/tickets', 
-    icon: TicketIcon,
-    description: 'Support tickets'
-  },
-  { 
-    name: 'Members', 
-    href: '/dashboard/members', 
-    icon: UsersIcon,
-    description: 'Team members & invitations',
-    badge: 'New'
-  },
-]
-
+// Additional navigation items specific to the dashboard sidebar
 const organizationMenu = [
-  { 
-    name: 'Organization Settings', 
-    href: '/dashboard/settings', 
-    icon: BuildingIcon,
-    description: 'Manage organization'
-  },
   { 
     name: 'Reports', 
     href: '/dashboard/reports', 
     icon: BarChart3Icon,
     description: 'Analytics & insights'
-  },
-]
-
-const quickActions = [
-  {
-    name: 'New Ticket',
-    href: '/dashboard/tickets/new',
-    icon: PlusIcon,
-    description: 'Create support ticket'
   },
   {
     name: 'Invite Member',
@@ -101,29 +70,32 @@ const quickActions = [
   },
 ]
 
-// Mock user data - replace with real data from your auth system
-const user = {
-  name: "John Doe",
-  email: "john@example.com",
-  avatar: "/avatars/john-doe.jpg",
-}
-
 export function DashboardSidebar({ organizationSlug }: DashboardSidebarProps) {
   const pathname = usePathname()
   const { organization, branding } = useTheme()
   const { state } = useSidebar()
-  const [showCreateOrgDialog, setShowCreateOrgDialog] = useState(false)
+  const { user, currentOrganization, isLoading } = useUser()
+  const permissions = useOrganizationPermissions()
 
   const isCollapsed = state === "collapsed"
 
-  const isActive = (href: string) => {
-    if (href === '/dashboard') {
-      return pathname === `/org/${organizationSlug}${href}`
+  // Filter navigation based on permissions
+  const filteredMainNavigation = MAIN_NAVIGATION.filter(item => {
+    if (item.name === 'Users') {
+      return permissions.canManageUsers
     }
-    return pathname.startsWith(`/org/${organizationSlug}${href}`)
-  }
+    return true
+  })
 
-  const getNavHref = (href: string) => `/org/${organizationSlug}${href}`
+  // Helper function to get user initials
+  const getUserInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+  }
 
   return (
     <Sidebar 
@@ -156,9 +128,9 @@ export function DashboardSidebar({ organizationSlug }: DashboardSidebarProps) {
           )}
           <SidebarGroupContent>
             <SidebarMenu>
-              {navigation.map((item) => {
+              {filteredMainNavigation.map((item) => {
                 const Icon = item.icon
-                const active = isActive(item.href)
+                const active = isNavigationActive(item.href, pathname, organizationSlug)
                 return (
                   <SidebarMenuItem key={item.name}>
                     <SidebarMenuButton 
@@ -170,7 +142,7 @@ export function DashboardSidebar({ organizationSlug }: DashboardSidebarProps) {
                         isCollapsed ? "!w-8 !h-8 !p-0 justify-center" : ""
                       )}
                     >
-                      <Link href={getNavHref(item.href)} className={cn(
+                      <Link href={buildHref(item.href, organizationSlug)} className={cn(
                         "flex items-center gap-2 w-full h-full",
                         isCollapsed ? "justify-center" : ""
                       )}>
@@ -179,14 +151,7 @@ export function DashboardSidebar({ organizationSlug }: DashboardSidebarProps) {
                           isCollapsed ? "h-4 w-4" : "h-4 w-4"
                         )} />
                         {!isCollapsed && (
-                          <>
-                            <span className="flex-1">{item.name}</span>
-                            {item.badge && (
-                              <Badge variant="secondary" className="text-xs">
-                                {item.badge}
-                              </Badge>
-                            )}
-                          </>
+                          <span className="flex-1">{item.name}</span>
                         )}
                       </Link>
                     </SidebarMenuButton>
@@ -206,7 +171,7 @@ export function DashboardSidebar({ organizationSlug }: DashboardSidebarProps) {
           )}
           <SidebarGroupContent>
             <SidebarMenu>
-              {quickActions.map((action) => {
+              {QUICK_ACTIONS.map((action) => {
                 const Icon = action.icon
                 return (
                   <SidebarMenuItem key={action.name}>
@@ -215,7 +180,7 @@ export function DashboardSidebar({ organizationSlug }: DashboardSidebarProps) {
                       tooltip={isCollapsed ? `${action.name} - ${action.description}` : action.description}
                       className={isCollapsed ? "!w-8 !h-8 !p-0 justify-center" : ""}
                     >
-                      <Link href={getNavHref(action.href)} className={cn(
+                      <Link href={buildHref(action.href, organizationSlug)} className={cn(
                         "flex items-center gap-2 w-full h-full",
                         isCollapsed ? "justify-center" : ""
                       )}>
@@ -244,7 +209,7 @@ export function DashboardSidebar({ organizationSlug }: DashboardSidebarProps) {
             <SidebarMenu>
               {organizationMenu.map((item) => {
                 const Icon = item.icon
-                const active = isActive(item.href)
+                const active = isNavigationActive(item.href, pathname, organizationSlug)
                 return (
                   <SidebarMenuItem key={item.name}>
                     <SidebarMenuButton 
@@ -256,7 +221,7 @@ export function DashboardSidebar({ organizationSlug }: DashboardSidebarProps) {
                         isCollapsed ? "!w-8 !h-8 !p-0 justify-center" : ""
                       )}
                     >
-                      <Link href={getNavHref(item.href)} className={cn(
+                      <Link href={buildHref(item.href, organizationSlug)} className={cn(
                         "flex items-center gap-2 w-full h-full",
                         isCollapsed ? "justify-center" : ""
                       )}>
@@ -291,16 +256,16 @@ export function DashboardSidebar({ organizationSlug }: DashboardSidebarProps) {
                     "rounded-lg flex-shrink-0",
                     isCollapsed ? "h-6 w-6" : "h-8 w-8"
                   )}>
-                    <AvatarImage src={user.avatar} alt={user.name} />
+                    <AvatarImage src={user?.image || undefined} alt={user?.name || 'User'} />
                     <AvatarFallback className="rounded-lg">
-                      {user.name.split(' ').map(n => n[0]).join('')}
+                      {user?.name ? getUserInitials(user.name) : 'U'}
                     </AvatarFallback>
                   </Avatar>
                   {!isCollapsed && (
                     <>
                       <div className="grid flex-1 text-left text-sm leading-tight">
-                        <span className="truncate font-semibold">{user.name}</span>
-                        <span className="truncate text-xs opacity-70">{user.email}</span>
+                        <span className="truncate font-semibold">{user?.name || 'Unknown User'}</span>
+                        <span className="truncate text-xs opacity-70">{user?.email || 'No email'}</span>
                       </div>
                       <ChevronUpIcon className="ml-auto size-4 flex-shrink-0" />
                     </>
@@ -314,18 +279,22 @@ export function DashboardSidebar({ organizationSlug }: DashboardSidebarProps) {
                 sideOffset={4}
               >
                 <DropdownMenuItem asChild>
-                  <Link href={getNavHref('/dashboard/profile')}>
+                  <Link href={buildHref('/dashboard/profile', organizationSlug)}>
                     Profile Settings
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/select-organization">
+                  <SwitchOrganizationButton className="w-full">
                     Switch Organization
-                  </Link>
+                  </SwitchOrganizationButton>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <LogOutIcon className="mr-2 h-4 w-4" />
-                  Sign Out
+                <DropdownMenuItem asChild>
+                  <div className="w-full">
+                    <LogoutButton 
+                      variant="ghost"
+                      className="w-full justify-start h-auto p-0"
+                    />
+                  </div>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -1,7 +1,7 @@
 import React from 'react'
 import { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
-import { validateOrganizationAction } from '@/server/actions/server-actions'
+import { validateOrganizationAction } from '@/server/actions/auth-actions'
 import { getServerSession } from '@/lib/session'
 import { SplitAuthLayout } from '@/components/auth/split-auth-layout'
 import { LoginForm } from '@/components/auth/login-form'

@@ -4,6 +4,8 @@ import { getTicketStats, getRecentTickets } from '@/server/db/queries';
 
 export async function getDashboardData(organizationId: string) {
   try {
+    console.log('getDashboardData called with organizationId:', organizationId)
+    
     const [stats, recentTickets] = await Promise.all([
       getTicketStats(organizationId),
       getRecentTickets(organizationId, 5)
@@ -66,8 +68,45 @@ export async function getDashboardData(organizationId: string) {
     };
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
+    
+    // Return fallback data to prevent UI crash
+    const fallbackStats = [
+      {
+        title: 'Open Tickets',
+        value: '0',
+        change: 'Unable to load data',
+        icon: 'TicketIcon',
+        color: 'text-blue-600',
+        bgColor: 'bg-blue-100'
+      },
+      {
+        title: 'In Progress',
+        value: '0',
+        change: 'Unable to load data',
+        icon: 'ClockIcon',
+        color: 'text-yellow-600',
+        bgColor: 'bg-yellow-100'
+      },
+      {
+        title: 'Resolved Today',
+        value: '0',
+        change: 'Unable to load data',
+        icon: 'CheckCircleIcon',
+        color: 'text-green-600',
+        bgColor: 'bg-green-100'
+      },
+      {
+        title: 'Urgent',
+        value: '0',
+        change: 'Unable to load data',
+        icon: 'AlertTriangleIcon',
+        color: 'text-red-600',
+        bgColor: 'bg-red-100'
+      }
+    ];
+    
     return {
-      stats: [],
+      stats: fallbackStats,
       recentTickets: []
     };
   }

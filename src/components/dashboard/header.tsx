@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from 'react'
-import { BellIcon, SearchIcon, SettingsIcon, LogOutIcon, UserIcon } from 'lucide-react'
+import { BellIcon, SearchIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -13,9 +13,13 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { LogoutButton } from '@/components/auth/logout-button'
 import { cn } from '@/lib/utils'
 import NavigationHeader from '@/components/sheard/navigation-header'
 import { SidebarTrigger } from '../ui/sidebar'
+import { useUser } from '@/contexts/user-context'
+import { USER_MENU_ITEMS, buildHref } from '@/lib/navigation-constants'
+import Link from 'next/link'
 
 interface HeaderProps {
   organizationSlug: string
@@ -25,6 +29,17 @@ interface HeaderProps {
 
 export function Header({ organizationSlug, organizationName, className }: HeaderProps) {
   const [showSearch, setShowSearch] = useState(false)
+  const { user, currentOrganization, isLoading } = useUser()
+
+  // Helper function to get user initials
+  const getUserInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+  }
 
   return (
     <div className="border-b">
@@ -32,7 +47,7 @@ export function Header({ organizationSlug, organizationName, className }: Header
       {/* Main Header with Search and Actions */}
       <header
         className={cn(
-          "flex h-16 items-center justify-between px-4",
+          "flex h-12 items-center justify-between px-4",
           className
         )}
       >
@@ -113,54 +128,65 @@ export function Header({ organizationSlug, organizationName, className }: Header
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* User Menu - Now minimal since main user menu is in sidebar */}
+          {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src="/avatars/user.jpg" alt="User" />
+              <Button variant="ghost" size="icon" className="relative h-6 w-6 rounded-full">
+                <Avatar>
+                  <AvatarImage src={user?.image || undefined} alt={user?.name || 'User'} />
                   <AvatarFallback
-                    className="bg-brand-surface text-brand-primary"
+                    className="bg-brand-surface text-brand-primary text-xs ring-2"
                   >
-                    JD
+                    {user?.name ? getUserInitials(user.name) : 'U'}
                   </AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className='w-48'>
+            <DropdownMenuContent align="end" className='w-56'>
+              {/* User Info */}
               <div className="flex items-center gap-2 p-2">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src="/avatars/user.jpg" alt="User" />
+                  <AvatarImage src={user?.image || undefined} alt={user?.name || 'User'} />
                   <AvatarFallback
                     className="bg-brand-surface text-brand-primary text-xs"
                   >
-                    JD
+                    {user?.name ? getUserInitials(user.name) : 'U'}
                   </AvatarFallback>
                 </Avatar>
-                <div className="text-sm">
-                  <p className="font-medium">John Doe</p>
-                  <p className="opacity-70">john@example.com</p>
+                <div className="text-sm flex-1 min-w-0">
+                  <p className="font-medium truncate">
+                    {user?.name || 'Unknown User'}
+                  </p>
+                  <p className="opacity-70 truncate text-xs">
+                    {user?.email || 'No email'}
+                  </p>
                 </div>
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <span className="flex items-center gap-2">
-                  <UserIcon className="h-4 w-4 text-brand-primary" />
-                  Profile
-                </span>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <span className="flex items-center gap-2">
-                  <SettingsIcon className="h-4 w-4 text-brand-primary" />
-                  Settings
-                </span>
-              </DropdownMenuItem>
+              
+              {/* Menu Items */}
+              {USER_MENU_ITEMS.map((item) => (
+                <DropdownMenuItem key={item.name} asChild>
+                  <Link 
+                    href={buildHref(item.href, organizationSlug)}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <item.icon className="h-4 w-4 text-brand-primary" />
+                    {item.name}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+              
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-600">
-                <span className="flex items-center gap-2">
-                  <LogOutIcon className="h-4 w-4 text-red-600" />
-                  Sign out
-                </span>
+              
+              {/* Logout */}
+              <DropdownMenuItem asChild>
+                <div className="w-full">
+                  <LogoutButton 
+                    variant="ghost"
+                    className="w-full justify-start text-red-600 hover:text-red-600 hover:bg-red-50 h-auto p-2"
+                  />
+                </div>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -195,7 +221,7 @@ export function Header({ organizationSlug, organizationName, className }: Header
       {/* Navigation Header with Breadcrumb */}
       <NavigationHeader
         organizationSlug={organizationSlug}
-        organizationName={organizationName}
+        organizationName={currentOrganization?.name || organizationName}
       />
 
     </div>

@@ -1,11 +1,11 @@
 "use client"
 
 import React, { useState } from 'react'
-import { notFound } from 'next/navigation'
-import { ThemeProvider, useTheme } from '@/components/branding/theme-provider'
+import { ThemeProvider } from '@/components/branding/theme-provider'
+import { UserProvider } from '@/contexts/user-context'
+import { TicketProvider } from '@/contexts/ticket-context'
 import { Header } from '@/components/dashboard/header'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
-import { cn } from '@/lib/utils'
 import { DashboardSidebar } from './dashboard-sidebar'
 
 interface DashboardLayoutProps {
@@ -42,8 +42,12 @@ function DashboardLayoutContent({
 
 export function DashboardLayout(props: DashboardLayoutProps) {
   return (
-    <ThemeProvider initialOrganization={props.organization}>
-      <DashboardLayoutContent {...props} />
-    </ThemeProvider>
+    <UserProvider initialOrganizationSlug={props.organizationSlug}>
+      <TicketProvider>
+        <ThemeProvider initialOrganization={props.organization}>
+          <DashboardLayoutContent {...props} />
+        </ThemeProvider>
+      </TicketProvider>
+    </UserProvider>
   )
 }

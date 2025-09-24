@@ -3,12 +3,13 @@
 import React, { useActionState, useState } from 'react'
 import Link from 'next/link'
 import { Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react'
+import { SwitchOrganizationButton } from '@/components/auth/switch-organization-button'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { loginAction } from '@/server/actions/server-actions'
+import { loginAction } from '@/server/actions/auth-actions'
 import { cn } from '@/lib/utils'
 
 interface LoginFormProps {
@@ -33,7 +34,7 @@ export function LoginForm({ organizationSlug, className, intent, showModeSwitch 
       <form action={formAction} className="space-y-4">
         {/* Hidden fields for organization slug and intent */}
         {organizationSlug && <input type="hidden" name="organizationSlug" value={organizationSlug} />}
-        {intent && <input type="hidden" name="intent" value={intent} />}
+        <input type="hidden" name="intent" value={intent || ""} />
         
         {/* Error Message */}
         {!state.success && state.message && (
@@ -141,7 +142,7 @@ export function LoginForm({ organizationSlug, className, intent, showModeSwitch 
         <Button
           type="submit"
           disabled={isPending}
-          className="w-full btn-brand-primary py-3 text-base font-medium"
+          className="w-full btn-brand-primary text-base font-medium"
         >
           {isPending ? (
             <>
@@ -173,7 +174,7 @@ export function LoginForm({ organizationSlug, className, intent, showModeSwitch 
       {organizationSlug && !showModeSwitch && (
         <>
           {/* Demo Credentials Info */}
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          {/* <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
             <h4 className="text-sm font-medium text-blue-800 mb-2">
               Demo Credentials
             </h4>
@@ -184,7 +185,7 @@ export function LoginForm({ organizationSlug, className, intent, showModeSwitch 
               <div><strong>Email:</strong> demo@example.com</div>
               <div><strong>Password:</strong> password</div>
             </div>
-          </div>
+          </div> */}
 
           {/* Footer Links */}
           <div className="text-center text-sm text-gray-500 space-y-2">
@@ -198,12 +199,7 @@ export function LoginForm({ organizationSlug, className, intent, showModeSwitch 
               </Link>
             </p>
             <p>
-              <Link
-                href="/select-organization"
-                className="link-brand"
-              >
-                Switch organization
-              </Link>
+              <SwitchOrganizationButton />
             </p>
           </div>
         </>

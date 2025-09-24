@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { signUpAction } from '@/server/actions/server-actions'
+import { signUpAction } from '@/server/actions/auth-actions'
 import { cn } from '@/lib/utils'
 
 interface SignUpFormProps {

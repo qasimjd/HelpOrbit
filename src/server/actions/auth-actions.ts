@@ -21,20 +21,36 @@ export async function loginAction(prevState: any, formData: FormData) {
       email: formData.get('email') as string,
       password: formData.get('password') as string,
       organizationSlug: formData.get('organizationSlug') as string,
-      intent: formData.get('intent') as string,
+      intent: formData.get('intent') as string | null,
     }
 
     const rememberMe = formData.get('rememberMe') === 'on'
 
+    console.log('Raw form data:', { 
+      email: rawFormData.email, 
+      hasPassword: !!rawFormData.password, 
+      organizationSlug: rawFormData.organizationSlug, 
+      intent: rawFormData.intent 
+    })
+
+    // Clean up the form data - convert null/empty intent to undefined
+    const cleanedFormData = {
+      ...rawFormData,
+      intent: rawFormData.intent && rawFormData.intent.trim() !== "" ? rawFormData.intent : undefined
+    }
+
     // For general auth flow (intent=create-organization), we don't need organizationSlug
-    const schemaToUse = rawFormData.intent === 'create-organization' 
+    const schemaToUse = cleanedFormData.intent === 'create-organization' 
       ? loginWithoutOrgSchema
       : loginSchema.extend({ intent: z.string().optional() })
 
+    console.log('Using schema for intent:', cleanedFormData.intent, schemaToUse === loginWithoutOrgSchema ? 'loginWithoutOrgSchema' : 'loginSchema')
+
     // Validate input
-    const validatedFields = schemaToUse.safeParse(rawFormData)
+    const validatedFields = schemaToUse.safeParse(cleanedFormData)
     
     if (!validatedFields.success) {
+      console.log('Validation failed:', validatedFields.error.flatten().fieldErrors)
       return {
         success: false,
         errors: validatedFields.error.flatten().fieldErrors,
@@ -46,16 +62,30 @@ export async function loginAction(prevState: any, formData: FormData) {
     const organizationSlug = 'organizationSlug' in validatedFields.data ? validatedFields.data.organizationSlug : undefined
 
     // Sign in with Better Auth
-    const signInResult = await auth.api.signInEmail({
-      body: {
-        email,
-        password,
-        rememberMe: rememberMe || false
-      },
-      headers: await headers(),
-    })
+    console.log('Attempting sign in for email:', email, 'with org slug:', organizationSlug)
+    
+    let signInResult;
+    try {
+      signInResult = await auth.api.signInEmail({
+        body: {
+          email,
+          password,
+          rememberMe: rememberMe || false
+        },
+        headers: await headers(),
+      })
+      console.log('Sign in result:', signInResult ? 'Success' : 'Failed', signInResult?.user ? 'Has user' : 'No user')
+    } catch (authError) {
+      console.error('Auth API error:', authError)
+      return {
+        success: false,
+        message: 'Invalid email or password. Please try again.',
+        errors: {}
+      }
+    }
 
-    if (!signInResult) {
+    if (!signInResult || !signInResult.user) {
+      console.log('Sign in failed - no result or user')
       return {
         success: false,
         message: 'Invalid email or password. Please try again.',
@@ -70,11 +100,10 @@ export async function loginAction(prevState: any, formData: FormData) {
     } else if (organizationSlug) {
       // Original organization-specific login flow
       // After successful login, check if user has access to the organization
-      const session = await auth.api.getSession({
-        headers: await headers()
-      })
+      // Use the signInResult user instead of making a separate session call
+      const user = signInResult.user
 
-      if (!session?.user) {
+      if (!user) {
         return {
           success: false,
           message: 'Authentication failed. Please try again.',
@@ -83,20 +112,32 @@ export async function loginAction(prevState: any, formData: FormData) {
       }
 
       // Get user's organizations to verify access
-      const userOrgs = await auth.api.listOrganizations({
-        headers: await headers()
-      })
+      try {
+        const userOrgs = await auth.api.listOrganizations({
+          headers: await headers()
+        })
 
-      const hasAccess = userOrgs?.some((org: any) => 
-        org.slug === organizationSlug
-      )
+        console.log('User organizations found:', userOrgs?.length || 0)
+        console.log('Looking for organization slug:', organizationSlug)
 
-      if (!hasAccess) {
-        return {
-          success: false,
-          message: 'You do not have access to this organization.',
-          errors: {}
+        const hasAccess = userOrgs?.some((org: any) => 
+          org.slug === organizationSlug
+        )
+
+        if (!hasAccess) {
+          console.log('User does not have access to organization:', organizationSlug)
+          return {
+            success: false,
+            message: 'You do not have access to this organization.',
+            errors: {}
+          }
         }
+
+        console.log('User has access to organization:', organizationSlug)
+      } catch (orgError) {
+        console.error('Error fetching user organizations:', orgError)
+        // If we can't fetch organizations, let's still allow login and handle it later
+        console.log('Proceeding with login despite organization check failure')
       }
 
       // Redirect to dashboard

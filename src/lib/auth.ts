@@ -14,7 +14,7 @@ import {
 } from "@/server/db/schema";
 import { sendEmail } from "@/lib/emal";
 import { createAuthMiddleware, APIError } from "better-auth/api";
-import { passwordSchema } from "@/lib/schemas";
+import { passwordSchema } from "@/schemas";
 
 
 

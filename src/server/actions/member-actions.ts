@@ -1,6 +1,6 @@
 "use server";
 
-import { cookies, headers } from "next/headers";
+import { headers } from "next/headers";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import type {
@@ -12,32 +12,13 @@ import type {
   MemberListResponse,
   MemberRole,
 } from "@/types/auth-organization";
-
-// Validation schemas
-const inviteMemberSchema = z.object({
-  organizationId: z.string().min(1, "Organization ID is required"),
-  email: z.string().email("Valid email is required"),
-  role: z.enum(["owner", "admin", "member"]),
-});
-
-const updateMemberRoleSchema = z.object({
-  organizationId: z.string().min(1, "Organization ID is required"),
-  memberId: z.string().min(1, "Member ID is required"),
-  role: z.enum(["owner", "admin", "member"]),
-});
-
-const removeMemberSchema = z.object({
-  organizationId: z.string().min(1, "Organization ID is required"),
-  memberIdOrEmail: z.string().min(1, "Member ID or email is required"),
-});
-
-const listMembersSchema = z.object({
-  organizationId: z.string().optional(),
-  limit: z.number().min(1).max(100).default(20),
-  offset: z.number().min(0).default(0),
-  sortBy: z.string().optional(),
-  sortDirection: z.enum(["asc", "desc"]).default("desc"),
-});
+import {
+  inviteMemberSchema,
+  updateMemberRoleSchema,
+  removeMemberSchema,
+  listMembersSchema,
+  addMemberSchema
+} from "@/schemas/member";
 
 /**
  * Add a member directly to an organization (without invitation)
@@ -50,11 +31,7 @@ export async function addMemberAction(
   }
 ): Promise<ActionResponse<MemberData>> {
   try {
-    const validatedInput = z.object({
-      organizationId: z.string().min(1),
-      userId: z.string().min(1),
-      role: z.enum(["owner", "admin", "member"]),
-    }).parse(input);
+    const validatedInput = addMemberSchema.parse(input);
 
     const result = await auth.api.addMember({
       body: validatedInput,

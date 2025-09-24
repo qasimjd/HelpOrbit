@@ -82,11 +82,13 @@ export function OrganizationFinder({ onOrganizationSelect, className, autoCreate
     setIsLoading(true)
 
     try {
+      console.log('Selecting organization:', org)
       // In real app, this would validate the organization and set session/context
       if (onOrganizationSelect) {
         onOrganizationSelect(org)
       } else {
         // Navigate to organization login
+        console.log('Navigating to:', `/org/${org.slug}/login`)
         router.push(`/org/${org.slug}/login`)
       }
     } catch (error) {
@@ -103,10 +105,22 @@ export function OrganizationFinder({ onOrganizationSelect, className, autoCreate
     setIsLoading(true)
 
     try {
-      // In real app, this would validate the slug exists
+      console.log('Direct entry - checking organization exists:', slug)
+      
+      // Import and validate organization exists
+      const { validateOrganizationAction } = await import('@/server/actions/auth-actions')
+      const { exists, organization } = await validateOrganizationAction(slug)
+      
+      if (!exists || !organization) {
+        alert(`Organization "${slug}" not found. Please check the organization name and try again.`)
+        return
+      }
+      
+      console.log('Organization found, navigating to login:', organization)
       router.push(`/org/${slug}/login`)
     } catch (error) {
-      console.error('Failed to navigate to organization:', error)
+      console.error('Failed to validate or navigate to organization:', error)
+      alert('Failed to find organization. Please try again.')
     } finally {
       setIsLoading(false)
     }

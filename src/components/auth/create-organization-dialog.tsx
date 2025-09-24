@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Building, Loader2, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,20 +31,9 @@ import { createOrganizationAction, checkOrganizationSlugAction } from "@/server/
 import { useDebounce } from "@/hooks/use-debounce";
 import { useSession } from "@/lib/auth-client";
 import { AuthPromptDialog } from "@/components/auth/auth-prompt-dialog";
+import { createOrganizationSchema, type CreateOrganizationData } from "@/schemas/organization";
 
-const createOrganizationSchema = z.object({
-  name: z.string().min(1, "Organization name is required").max(100, "Name too long"),
-  slug: z
-    .string()
-    .min(1, "Organization slug is required")
-    .max(50, "Slug too long")
-    .regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens")
-    .refine((slug) => !slug.startsWith("-") && !slug.endsWith("-"), "Slug cannot start or end with hyphens"),
-  logo: z.string().url("Invalid URL").optional().or(z.literal("")),
-  description: z.string().max(500, "Description too long").optional(),
-});
-
-type CreateOrganizationForm = z.infer<typeof createOrganizationSchema>;
+type CreateOrganizationForm = CreateOrganizationData;
 
 interface CreateOrganizationDialogProps {
   open: boolean;

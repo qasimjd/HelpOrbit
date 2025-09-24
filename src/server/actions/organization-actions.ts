@@ -13,31 +13,11 @@ import type {
   FullOrganization,
   OrganizationListResponse,
 } from "@/types/auth-organization";
-
-// Validation schemas
-const createOrganizationSchema = z.object({
-  name: z.string().min(1, "Organization name is required").max(100),
-  slug: z
-    .string()
-    .min(1, "Organization slug is required")
-    .max(50)
-    .regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens"),
-  logo: z.string().url().optional(),
-  metadata: z.record(z.string(), z.any()).optional(),
-});
-
-const updateOrganizationSchema = z.object({
-  id: z.string().min(1),
-  name: z.string().min(1).max(100).optional(),
-  slug: z
-    .string()
-    .min(1)
-    .max(50)
-    .regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens")
-    .optional(),
-  logo: z.string().url().optional(),
-  metadata: z.record(z.string(), z.any()).optional(),
-});
+import { 
+  createOrganizationSchema,
+  updateOrganizationSchema,
+  checkOrganizationSlugSchema
+} from "@/schemas/organization";
 
 /**
  * Create a new organization

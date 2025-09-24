@@ -42,7 +42,7 @@ export async function getOrganizationMembers(organizationId: string) {
 
 // Ticket queries
 export async function getTicketsByOrganization(organizationId: string) {
-  return await db
+  const results = await db
     .select({
       id: ticket.id,
       title: ticket.title,
@@ -50,6 +50,9 @@ export async function getTicketsByOrganization(organizationId: string) {
       status: ticket.status,
       priority: ticket.priority,
       tags: ticket.tags,
+      organizationId: ticket.organizationId,
+      requesterId: ticket.requesterId,
+      assigneeId: ticket.assigneeId,
       createdAt: ticket.createdAt,
       updatedAt: ticket.updatedAt,
       resolvedAt: ticket.resolvedAt,
@@ -69,6 +72,12 @@ export async function getTicketsByOrganization(organizationId: string) {
     .leftJoin(member, eq(ticket.assigneeId, member.id))
     .where(eq(ticket.organizationId, organizationId))
     .orderBy(desc(ticket.createdAt));
+
+  // Parse tags from JSON string to array
+  return results.map(ticket => ({
+    ...ticket,
+    tags: ticket.tags ? JSON.parse(ticket.tags) : null
+  }));
 }
 
 export async function getTicketById(ticketId: string, organizationId: string) {
@@ -80,6 +89,9 @@ export async function getTicketById(ticketId: string, organizationId: string) {
       status: ticket.status,
       priority: ticket.priority,
       tags: ticket.tags,
+      organizationId: ticket.organizationId,
+      requesterId: ticket.requesterId,
+      assigneeId: ticket.assigneeId,
       createdAt: ticket.createdAt,
       updatedAt: ticket.updatedAt,
       resolvedAt: ticket.resolvedAt,
@@ -100,7 +112,14 @@ export async function getTicketById(ticketId: string, organizationId: string) {
     .where(and(eq(ticket.id, ticketId), eq(ticket.organizationId, organizationId)))
     .limit(1);
   
-  return result[0] || null;
+  const ticketData = result[0];
+  if (!ticketData) return null;
+
+  // Parse tags from JSON string to array
+  return {
+    ...ticketData,
+    tags: ticketData.tags ? JSON.parse(ticketData.tags) : null
+  };
 }
 
 export async function getTicketComments(ticketId: string) {
@@ -133,38 +152,54 @@ export async function getTicketAttachments(ticketId: string) {
 
 // Dashboard statistics
 export async function getTicketStats(organizationId: string) {
-  const [
-    openTickets,
-    inProgressTickets,
-    resolvedToday,
-    urgentTickets
-  ] = await Promise.all([
-    db.select({ count: count() }).from(ticket).where(and(
-      eq(ticket.organizationId, organizationId),
-      eq(ticket.status, 'open')
-    )),
-    db.select({ count: count() }).from(ticket).where(and(
-      eq(ticket.organizationId, organizationId),
-      eq(ticket.status, 'in_progress')
-    )),
-    db.select({ count: count() }).from(ticket).where(and(
-      eq(ticket.organizationId, organizationId),
-      eq(ticket.status, 'resolved')
-      // TODO: Add date filter for today
-    )),
-    db.select({ count: count() }).from(ticket).where(and(
-      eq(ticket.organizationId, organizationId),
-      eq(ticket.priority, 'urgent'),
-      or(eq(ticket.status, 'open'), eq(ticket.status, 'in_progress'))
-    ))
-  ]);
+  try {
+    console.log('Fetching ticket stats for organization:', organizationId)
+    
+    // Validate organization ID
+    if (!organizationId || organizationId.trim() === '') {
+      throw new Error('Organization ID is required')
+    }
 
-  return {
-    openTickets: openTickets[0].count,
-    inProgressTickets: inProgressTickets[0].count,
-    resolvedToday: resolvedToday[0].count,
-    urgentTickets: urgentTickets[0].count,
-  };
+    const [
+      openTickets,
+      inProgressTickets,
+      resolvedToday,
+      urgentTickets
+    ] = await Promise.all([
+      db.select({ count: count() }).from(ticket).where(and(
+        eq(ticket.organizationId, organizationId),
+        eq(ticket.status, 'open')
+      )),
+      db.select({ count: count() }).from(ticket).where(and(
+        eq(ticket.organizationId, organizationId),
+        eq(ticket.status, 'in_progress')
+      )),
+      db.select({ count: count() }).from(ticket).where(and(
+        eq(ticket.organizationId, organizationId),
+        eq(ticket.status, 'resolved')
+        // TODO: Add date filter for today
+      )),
+      db.select({ count: count() }).from(ticket).where(and(
+        eq(ticket.organizationId, organizationId),
+        eq(ticket.priority, 'urgent'),
+        or(eq(ticket.status, 'open'), eq(ticket.status, 'in_progress'))
+      ))
+    ]);
+
+    const stats = {
+      openTickets: openTickets[0]?.count || 0,
+      inProgressTickets: inProgressTickets[0]?.count || 0,
+      resolvedToday: resolvedToday[0]?.count || 0,
+      urgentTickets: urgentTickets[0]?.count || 0,
+    };
+
+    console.log('Ticket stats result:', stats)
+    return stats
+  } catch (error) {
+    console.error('Error in getTicketStats:', error)
+    console.error('Organization ID:', organizationId)
+    throw error
+  }
 }
 
 export async function getRecentTickets(organizationId: string, limit = 5) {

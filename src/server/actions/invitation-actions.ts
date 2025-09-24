@@ -10,26 +10,15 @@ import type {
   InvitationListResponse,
   MemberRole,
 } from "@/types/auth-organization";
-
-// Validation schemas
-const inviteMemberSchema = z.object({
-  organizationId: z.string().min(1, "Organization ID is required"),
-  email: z.string().email("Valid email is required"),
-  role: z.enum(["owner", "admin", "member"]),
-  resend: z.boolean().optional(),
-});
-
-const invitationIdSchema = z.object({
-  invitationId: z.string().min(1, "Invitation ID is required"),
-});
-
-const listInvitationsSchema = z.object({
-  organizationId: z.string().optional(),
-});
-
-const listUserInvitationsSchema = z.object({
-  email: z.string().email().optional(),
-});
+import { inviteMemberSchema } from "@/schemas/member";
+import {
+  invitationIdSchema,
+  listInvitationsSchema,
+  listUserInvitationsSchema,
+  acceptInvitationSchema,
+  declineInvitationSchema,
+  cancelInvitationSchema
+} from "@/schemas/invitation";
 
 /**
  * Send an invitation to join an organization
