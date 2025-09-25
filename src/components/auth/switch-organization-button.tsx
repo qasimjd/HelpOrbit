@@ -1,61 +1,48 @@
 "use client"
 
-import React from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { cn } from '@/lib/utils'
+import React from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { cn } from "@/lib/utils"
+import { ArrowLeft } from "lucide-react"
 
 interface SwitchOrganizationButtonProps {
   className?: string
   children?: React.ReactNode
   href?: string
   asChild?: boolean
-  variant?: 'link' | 'button'
+  variant?: "link" | "button"
+  clearSession?: boolean // optional prop
 }
 
-export function SwitchOrganizationButton({ 
-  className, 
+export function SwitchOrganizationButton({
+  className,
   children = "Switch organization",
   href = "/select-organization",
   asChild = false,
-  variant = 'link'
+  variant = "link",
+  clearSession = false, // default false
 }: SwitchOrganizationButtonProps) {
   const router = useRouter()
 
   const handleSwitchOrganization = (e: React.MouseEvent) => {
     e.preventDefault()
-    
-    // Clear local storage to reset theme back to HelpOrbit default
-    if (typeof window !== 'undefined') {
-      // Clear all organization-related theme data from localStorage
-      const keysToRemove = []
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i)
-        if (key && (
-          key.includes('theme') || 
-          key.includes('organization') || 
-          key.includes('branding') ||
-          key.includes('org-')
-        )) {
-          keysToRemove.push(key)
-        }
+
+    if (typeof window !== "undefined") {
+      if (clearSession) {
+        // Logout → clear both
+        localStorage.clear()
+        sessionStorage.clear()
+      } else {
+        // Switch org → clear only localStorage
+        localStorage.clear()
       }
-      
-      // Remove all organization-related keys
-      keysToRemove.forEach(key => {
-        localStorage.removeItem(key)
-      })
-      
-      // Also clear sessionStorage if needed
-      sessionStorage.removeItem('current-organization')
-      sessionStorage.removeItem('organization-theme')
     }
-    
-    // Navigate to select organization page
+
     router.push(href)
   }
 
-  if (variant === 'button') {
+  if (variant === "button") {
     return (
       <button
         onClick={handleSwitchOrganization}
@@ -73,13 +60,16 @@ export function SwitchOrganizationButton({
     )
   }
 
-  // Default link variant
   return (
     <Link
       href={href}
       onClick={handleSwitchOrganization}
-      className={cn("", className)}
+      className={cn(
+        "text-sm opacity-70 hover:opacity-100 inline-flex items-center group transition-opacity text-foreground",
+        className
+      )}
     >
+      <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
       {children}
     </Link>
   )

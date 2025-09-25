@@ -156,7 +156,7 @@ export function CreateOrganizationDialog({
         <DialogContent className="sm:max-w-5xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <BrandedLogo size="sm" helpOrbit/>
+              <BrandedLogo size="sm" helpOrbit />
               Create Organization
             </DialogTitle>
             <DialogDescription>
@@ -183,79 +183,81 @@ export function CreateOrganizationDialog({
                   </div>
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Organization Name *</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter organization name"
-                          {...field}
-                          disabled={isSubmitting}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        The display name for your organization
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="slug"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Organization Slug *</FormLabel>
-                      <FormControl>
-                        <div className="relative">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Organization Name *</FormLabel>
+                        <FormControl>
                           <Input
-                            placeholder="organization-slug"
+                            placeholder="Enter organization name"
                             {...field}
                             disabled={isSubmitting}
-                            className="pr-10"
-                            onChange={(e) => {
-                              setSlugEdited(true);
-                              field.onChange(e.target.value);
-                            }}
                           />
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                            {checkingSlug && (
-                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                            )}
-                            {slugAvailable === true && (
-                              <Check className="h-4 w-4 text-green-600" />
-                            )}
-                            {slugAvailable === false && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  form.setValue("slug", "");
-                                  setSlugEdited(false);
-                                  setSlugAvailable(null);
-                                }}
-                              >
-                                <X className="h-4 w-4 text-red-600" />
-                              </button>
-                            )}
+                        </FormControl>
+                        <FormDescription>
+                          The display name for your organization
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="slug"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Organization Slug *</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              placeholder="organization-slug"
+                              {...field}
+                              disabled={isSubmitting}
+                              className="pr-10"
+                              onChange={(e) => {
+                                setSlugEdited(true);
+                                field.onChange(e.target.value);
+                              }}
+                            />
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                              {checkingSlug && (
+                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                              )}
+                              {slugAvailable === true && (
+                                <Check className="h-4 w-4 text-green-600" />
+                              )}
+                              {slugAvailable === false && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    form.setValue("slug", "");
+                                    setSlugEdited(false);
+                                    setSlugAvailable(null);
+                                  }}
+                                >
+                                  <X className="h-4 w-4 text-red-600" />
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      </FormControl>
-                      <FormDescription>
-                        Used in URLs and must be unique. Only lowercase letters, numbers, and hyphens.
-                      </FormDescription>
-                      {slugAvailable === false && (
-                        <div className="text-sm text-red-600">
-                          This slug is already taken
-                        </div>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        </FormControl>
+                        <FormDescription>
+                          Used in URLs and must be unique. Only lowercase letters, numbers, and hyphens.
+                        </FormDescription>
+                        {slugAvailable === false && (
+                          <div className="text-sm text-red-600">
+                            This slug is already taken
+                          </div>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <FormField
                   control={form.control}

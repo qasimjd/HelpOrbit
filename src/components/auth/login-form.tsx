@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { loginAction } from "@/server/actions/auth-actions"
 import { cn } from "@/lib/utils"
+import SocialLoginButtons from "@/components/auth/social-login-buttons"
 
 interface LoginFormProps {
   organizationSlug?: string
@@ -189,7 +190,7 @@ export function LoginForm({
         </div>
 
         {/* Submit Button */}
-        <Button type="submit" disabled={isPending} className="w-full">
+        <Button type="submit" disabled={isPending} className={cn("w-full", organizationSlug && "btn-brand-primary")}>
           {isPending ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -200,6 +201,11 @@ export function LoginForm({
           )}
         </Button>
       </form>
+
+      {/* Social Login Buttons */}
+      {!organizationSlug && (
+        <SocialLoginButtons />
+      )}
 
       {/* Mode Switch */}
       {showModeSwitch && (
@@ -228,11 +234,11 @@ export function LoginForm({
               Contact your administrator
             </Link>
           </p>
-          <p>
-            <SwitchOrganizationButton />
-          </p>
         </div>
       )}
+      <p className="text-center">
+        <SwitchOrganizationButton children="Organization selection" />
+      </p>
     </div>
   )
 }

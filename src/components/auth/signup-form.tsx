@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { signUpAction } from "@/server/actions/auth-actions"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
-import { toast } from "sonner"
+import SocialLoginButtons from "@/components/auth/social-login-buttons"
 
 interface SignUpFormProps {
   className?: string
@@ -54,7 +54,7 @@ export function SignUpForm({
     try {
       const result = await signUpAction(null, formData)
       setState(result)
-      
+
       // Handle client-side redirect on success
       if (result.success && result.redirectTo) {
         // Show success message briefly, then redirect
@@ -186,6 +186,11 @@ export function SignUpForm({
           )}
         </Button>
       </form>
+
+      {/* Social Login Buttons */}
+      {!organizationSlug && (
+        <SocialLoginButtons />
+      )}
 
       {/* Mode Switch */}
       {showModeSwitch && (

@@ -73,16 +73,17 @@ export default async function OrgPage() {
           <p className="text-sm text-muted-foreground mb-2">
             Looking for a different organization?
           </p>
-          <SwitchOrganizationButton className="group text-sm flex items-center justify-center text-foreground hover:underline">
-            <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1.5 transition-transform" />
-            Back to find organization
-          </SwitchOrganizationButton>
-          <br />
+          <SwitchOrganizationButton>Back to find organization</SwitchOrganizationButton>
+          <div className="flex items-center justify-center mx-auto my-4">
+            <span className="h-px flex-1 bg-muted-foreground/30" />
+            <span className="px-3 text-xs text-muted-foreground">or</span>
+            <span className="h-px flex-1 bg-muted-foreground/30" />
+          </div>
           <div className="text-xs text-muted-foreground">
-            <LogoutButton className='hover:text-destructive' afterLogoutRedirect='/login' />
+            <LogoutButton variant="outline" className="hover:text-destructive" afterLogoutRedirect="/login" />
           </div>
         </div>
+        </div>
       </div>
-    </div>
   )
 }

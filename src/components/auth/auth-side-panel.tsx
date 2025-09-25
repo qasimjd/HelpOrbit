@@ -1,7 +1,6 @@
 "use client"
 
 import React from 'react'
-import { ArrowLeft } from 'lucide-react'
 import { LogoWithText } from '@/components/branding/branded-logo'
 import { SwitchOrganizationButton } from '@/components/auth/switch-organization-button'
 
@@ -32,7 +31,6 @@ export function AuthSidePanel({
             size={logoSize}
             orientation="vertical"
             showTagline
-            helpOrbit
             className="items-start"
           />
         </div>
@@ -76,10 +74,7 @@ export function AuthSidePanel({
         {/* Optional Switch Organization Button */}
         {showSwitchOrganization && (
           <div className="mt-8 pt-8 border-t border-opacity-20 border-brand-text-20">
-            <SwitchOrganizationButton className="text-sm opacity-70 hover:opacity-100 inline-flex items-center group transition-opacity text-foreground">
-              <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-              Switch organization
-            </SwitchOrganizationButton>
+            <SwitchOrganizationButton />
           </div>
         )}
       </div>

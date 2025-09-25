@@ -1,7 +1,6 @@
 "use server";
 
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { requireServerSession } from "@/lib/session";
@@ -27,7 +26,7 @@ export async function createOrganizationAction(
 ): Promise<ActionResponse<OrganizationData>> {
   try {
     // Ensure user is authenticated
-    const session = await requireServerSession();
+    await requireServerSession();
     
     const validatedInput = createOrganizationSchema.parse(input);
 
@@ -63,13 +62,6 @@ export async function createOrganizationAction(
   } catch (error) {
     console.error("Create organization error:", error);
     
-    // Handle authentication errors
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
-      return {
-        success: false,
-        error: "Authentication required. Please sign in and try again.",
-      };
-    }
     
     if (error instanceof z.ZodError) {
       return {
@@ -93,7 +85,7 @@ export async function updateOrganizationAction(
 ): Promise<ActionResponse<OrganizationData>> {
   try {
     // Ensure user is authenticated
-    const session = await requireServerSession();
+    await requireServerSession();
     
     const validatedInput = updateOrganizationSchema.parse(input);
 
@@ -189,7 +181,7 @@ export async function deleteOrganizationAction(
 export async function listOrganizationsAction(): Promise<ActionResponse<OrganizationListResponse>> {
   try {
     // Ensure user is authenticated
-    const session = await requireServerSession();
+    await requireServerSession();
     
     const result = await auth.api.listOrganizations({
       headers: await headers(),

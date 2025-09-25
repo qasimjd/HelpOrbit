@@ -21,7 +21,7 @@ export function SplitAuthLayout({
   return (
     <div className="min-h-screen flex">
       {/* Left Panel - Branding & Organization */}
-      <AuthSidePanel 
+      <AuthSidePanel
         showFeatures={true}
         showSwitchOrganization={true}
         className="bg-brand-surface"
@@ -48,9 +48,7 @@ export function SplitAuthLayout({
           {/* Organization Selection for Mobile */}
           {showOrgSelect && !organization && (
             <div className="mt-8 pt-8 border-t border-opacity-20 lg:hidden border-brand-text-20">
-              <SwitchOrganizationButton className="text-sm opacity-70 hover:opacity-100 flex items-center justify-center text-brand-primary">
-                Choose your organization
-              </SwitchOrganizationButton>
+              <SwitchOrganizationButton />
             </div>
           )}
         </div>
