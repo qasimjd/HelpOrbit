@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { signUpAction } from "@/server/actions/auth-actions"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 interface SignUpFormProps {
   className?: string
@@ -24,9 +25,14 @@ export function SignUpForm({
 }: SignUpFormProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [isPending, setIsPending] = useState(false)
-  const [state, setState] = useState({
+  const [state, setState] = useState<{
+    success: boolean
+    errors: Record<string, string[]>
+    message: string
+    redirectTo?: string
+  }>({
     success: false,
-    errors: {} as Record<string, string[]>,
+    errors: {},
     message: "",
   })
   const router = useRouter();
@@ -36,19 +42,25 @@ export function SignUpForm({
     setIsPending(true)
 
     const formData = new FormData(e.currentTarget)
-    
+
     // Add organizationSlug and intent to formData if needed
     if (organizationSlug) {
       formData.set('organizationSlug', organizationSlug)
     }
-    
+
     // Add intent - if no org slug, assume create-organization flow
     formData.set('intent', organizationSlug ? 'join-organization' : 'create-organization')
 
     try {
       const result = await signUpAction(null, formData)
       setState(result)
-      router.push('/create-organization');
+      
+      // Handle client-side redirect on success
+      if (result.success && result.redirectTo) {
+        // Show success message briefly, then redirect
+        await new Promise((resolve) => setTimeout(resolve, 2000))
+        router.push(result.redirectTo);
+      }
     } catch (error) {
       console.error('Form submission error:', error)
       setState({
@@ -88,7 +100,7 @@ export function SignUpForm({
             className={cn(
               "input-brand transition-colors",
               state.errors && "name" in state.errors && state.errors.name &&
-                "border-destructive focus:border-destructive"
+              "border-destructive focus:border-destructive"
             )}
             disabled={isPending}
           />
@@ -112,7 +124,7 @@ export function SignUpForm({
             className={cn(
               "input-brand transition-colors",
               state.errors && "email" in state.errors && state.errors.email &&
-                "border-destructive focus:border-destructive"
+              "border-destructive focus:border-destructive"
             )}
             disabled={isPending}
           />
@@ -140,7 +152,7 @@ export function SignUpForm({
               className={cn(
                 "input-brand pr-10 transition-colors",
                 state.errors && "password" in state.errors && state.errors.password &&
-                  "border-destructive focus:border-destructive"
+                "border-destructive focus:border-destructive"
               )}
               disabled={isPending}
             />
@@ -182,7 +194,7 @@ export function SignUpForm({
             Already have an account?{" "}
             <Link
               href="/login"
-              className="link-brand font-medium text-primary hover:underline"
+              className="font-medium text-primary hover:underline"
             >
               Sign in
             </Link>

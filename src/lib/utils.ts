@@ -31,7 +31,6 @@ export const getInitials = (name: string) => {
 };
 
 export const generateDefaultLogo = () => {
-  // Each set has 3–4 colors to blend
   const gradientSets = [
     ['#6366f1', '#8b5cf6', '#ec4899'],                // Indigo → Violet → Pink
     ['#06b6d4', '#3b82f6', '#8b5cf6', '#6366f1'],     // Cyan → Blue → Violet → Indigo
@@ -42,7 +41,6 @@ export const generateDefaultLogo = () => {
 
   const colors = gradientSets[Math.floor(Math.random() * gradientSets.length)]
 
-  // Build gradient stops dynamically
   const stops = colors
     .map((color, i) => {
       const offset = (i / (colors.length - 1)) * 100
@@ -50,7 +48,6 @@ export const generateDefaultLogo = () => {
     })
     .join('')
 
-  // SVG with multi-stop gradient
   const svg = `
     <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
       <defs>
@@ -65,8 +62,18 @@ export const generateDefaultLogo = () => {
       </text>
     </svg>
   `
-
-  // Convert SVG to data URL
   const svgDataUrl = `data:image/svg+xml;base64,${btoa(svg)}`
   return svgDataUrl
+}
+
+
+export function generateSlug(input: string): string {
+  return input
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "") // remove invalid chars
+    .replace(/\s+/g, "-") // spaces → hyphen
+    .replace(/-+/g, "-") // collapse multiple hyphens
+    .replace(/^-+|-+$/g, "") // trim leading/trailing hyphens
+    .slice(0, 50); // enforce max length
 }

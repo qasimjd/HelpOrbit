@@ -3,16 +3,16 @@ import { nextCookies } from "better-auth/next-js";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { organization } from "better-auth/plugins";
 import { db } from "@/server/db";
-import { 
-    account, 
-    session, 
-    user, 
+import {
+    account,
+    session,
+    user,
     verification,
     organization as organizationTable,
     member,
     invitation
 } from "@/server/db/schema";
-import { sendEmail } from "@/lib/emal";
+import { sendEmailVerification, sendPasswordReset, sendOrganizationInvitation } from "@/lib/emails";
 import { createAuthMiddleware, APIError } from "better-auth/api";
 import { passwordSchema } from "@/schemas";
 
@@ -21,45 +21,34 @@ import { passwordSchema } from "@/schemas";
 export const auth = betterAuth({
     secret: process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET,
     basePath: "/api/auth",
-    baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+    baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
     trustedOrigins: [process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"],
     emailAndPassword: {
         enabled: true,
         sendResetPassword: async ({ user, url }) => {
-            await sendEmail({
+            await sendPasswordReset({
                 to: user.email,
-                subject: "Reset your password",
-                html: `<p>Hi ${user.name || user.email},</p>
-                       <p>Please click the link below to reset your password:</p>
-                       <a href="${url}">${url}</a>
-                       <p>If you did not request a password reset, you can safely ignore this email.</p>
-                       <p>Thank you!</p>
-                       <p>The Authyfy Team</p>
-                       `,
+                userName: user.name || user.email,
+                resetUrl: url,
             });
         }
     },
     emailVerification: {
-        sendOnSignUp: true,
+        sendOnSignUp: false,
         autoSignInAfterVerification: true,
+        callbackURL: process.env.EMAIL_VERIFICATION_CALLBACK_URL || "/email-verified",
         sendVerificationEmail: async ({ user, url }) => {
-            await sendEmail({
+            await sendEmailVerification({
                 to: user.email,
-                subject: "Verify your email",
-                html: `<p>Hi ${user.name || user.email},</p>
-                       <p>Please click the link below to verify your email address:</p>
-                       <a href="${url}">${url}</a>
-                       <p>If you did not create an account, you can safely ignore this email.</p>
-                       <p>Thank you!</p>
-                       <p>The Authyfy Team</p>
-                       `,
+                userName: user.name || user.email,
+                verificationUrl: url,
             });
         }
     },
     hooks: {
         before: createAuthMiddleware(async (ctx) => {
             if (
-                ctx.path === "/sign-up/email" ||
+                ctx.path === "/signup/email" ||
                 ctx.path === "/reset-password" ||
                 ctx.path === "/change-password"
             ) {
@@ -71,12 +60,22 @@ export const auth = betterAuth({
             }
         })
     },
+    socialProviders: {
+        google: {
+            clientId: process.env.GOOGLE_CLIENT_ID as string,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+        },
+        github: {
+            clientId: process.env.GITHUB_CLIENT_ID as string,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
+        },
+    },
     database: drizzleAdapter(db, {
         provider: "pg",
-        schema: { 
-            user, 
-            account, 
-            session, 
+        schema: {
+            user,
+            account,
+            session,
             verification,
             organization: organizationTable,
             member,
@@ -91,24 +90,14 @@ export const auth = betterAuth({
             invitationExpiresIn: 60 * 60 * 48, // 48 hours
             sendInvitationEmail: async (data) => {
                 const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/org/${data.organization.slug}/accept-invitation/${data.id}`;
-                await sendEmail({
+
+                await sendOrganizationInvitation({
                     to: data.email,
-                    subject: `You're invited to join ${data.organization.name}`,
-                    html: `
-                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                            <h2>You're invited to join ${data.organization.name}</h2>
-                            <p>Hi there,</p>
-                            <p>${data.inviter.user.name || data.inviter.user.email} has invited you to join <strong>${data.organization.name}</strong> as a ${data.role}.</p>
-                            <div style="text-align: center; margin: 30px 0;">
-                                <a href="${inviteLink}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-                                    Accept Invitation
-                                </a>
-                            </div>
-                            <p>If you don't want to join this organization, you can safely ignore this email.</p>
-                            <p>This invitation will expire in 48 hours.</p>
-                            <p>Best regards,<br>The HelpOrbit Team</p>
-                        </div>
-                    `,
+                    inviterName: data.inviter.user.name || data.inviter.user.email,
+                    organizationName: data.organization.name,
+                    role: data.role,
+                    invitationUrl: inviteLink,
+                    callbackUrl: process.env.ORGANIZATION_INVITATION_CALLBACK_URL || `/org/${data.organization.slug}/dashboard`,
                 });
             },
         }),

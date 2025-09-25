@@ -28,7 +28,7 @@ export async function middleware(request: NextRequest) {
     // Define route patterns
     const isAuthRoute = pathname.startsWith('/login') || 
                        pathname.startsWith('/signup') || 
-                       pathname.startsWith('/create-organization') ||
+                       pathname.startsWith('/org') ||
                        pathname.startsWith('/select-organization') ||
                        pathname.match(/^\/org\/[^\/]+\/(login|forgot-password)$/);
     

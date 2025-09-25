@@ -4,7 +4,6 @@ import React from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { LogoWithText } from '@/components/branding/branded-logo'
 import { SwitchOrganizationButton } from '@/components/auth/switch-organization-button'
-import { useTheme } from '@/components/branding/theme-provider'
 
 interface AuthSidePanelProps {
   title?: string
@@ -32,7 +31,8 @@ export function AuthSidePanel({
           <LogoWithText
             size={logoSize}
             orientation="vertical"
-            showTagline={true}
+            showTagline
+            helpOrbit
             className="items-start"
           />
         </div>

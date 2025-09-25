@@ -1,38 +1,50 @@
 "use client"
 
-import React from 'react'
-import Image from 'next/image'
-import { cn } from '@/lib/utils'
-import { useTheme } from './theme-provider'
+import React from "react"
+import Image from "next/image"
+import { cn } from "@/lib/utils"
+import { useTheme } from "./theme-provider"
 
 interface BrandedLogoProps {
-  size?: 'sm' | 'md' | 'lg' | 'xl'
+  size?: "sm" | "md" | "lg" | "xl"
   showFallback?: boolean
   className?: string
   helpOrbit?: boolean
 }
 
 const sizeClasses = {
-  sm: 'h-8 w-8',
-  md: 'h-12 w-12',
-  lg: 'h-16 w-16',
-  xl: 'h-20 w-20'
+  sm: "h-8 w-8",
+  md: "h-12 w-12",
+  lg: "h-16 w-16",
+  xl: "h-20 w-20",
 }
 
 interface BrandedTextLogoProps {
   showTagline?: boolean
-  size?: 'sm' | 'md' | 'lg' | 'xl'
+  size?: "sm" | "md" | "lg" | "xl"
   className?: string
+  helpOrbit?: boolean
 }
 
-export function BrandedLogo({ size = 'md', showFallback = true, className, helpOrbit }: BrandedLogoProps) {
+export function BrandedLogo({
+  size = "md",
+  showFallback = true,
+  className,
+  helpOrbit = false,
+}: BrandedLogoProps) {
   const { organization, branding } = useTheme()
   const [imageError, setImageError] = React.useState(false)
 
-  const logoUrl = branding.logoUrl || organization?.logoUrl || '/logos/helporbit-logo.svg'
-  const altText = organization?.name ? `${organization.name} logo` : 'HelpOrbit logo'
+  const logoUrl = helpOrbit
+    ? "/logos/helporbit-logo.svg"
+    : branding.logoUrl || organization?.logoUrl || "/logos/helporbit-logo.svg"
 
-  // Reset error state when logoUrl changes
+  const altText = helpOrbit
+    ? "HelpOrbit logo"
+    : organization?.name
+    ? `${organization.name} logo`
+    : "HelpOrbit logo"
+
   React.useEffect(() => {
     setImageError(false)
   }, [logoUrl])
@@ -40,18 +52,26 @@ export function BrandedLogo({ size = 'md', showFallback = true, className, helpO
   const shouldShowFallback = !logoUrl || imageError
 
   return (
-    <div className={cn("relative flex items-center justify-center", sizeClasses[size], className)}>
+    <div
+      className={cn(
+        "relative flex items-center justify-center",
+        sizeClasses[size],
+        className
+      )}
+    >
       {!shouldShowFallback ? (
         <Image
-          src={helpOrbit ? '/logos/helporbit-logo.svg' : logoUrl}
+          src={logoUrl}
           alt={altText}
           fill
           className="object-contain rounded-lg"
-          priority={size === 'lg' || size === 'xl'}
+          priority={size === "lg" || size === "xl"}
           onError={() => {
             setImageError(true)
-            if (logoUrl !== '/logos/helporbit-logo.svg') {
-              console.warn('Failed to load organization logo, falling back to default')
+            if (logoUrl !== "/logos/helporbit-logo.svg") {
+              console.warn(
+                "Failed to load organization logo, falling back to default"
+              )
             }
           }}
         />
@@ -63,10 +83,15 @@ export function BrandedLogo({ size = 'md', showFallback = true, className, helpO
               sizeClasses[size]
             )}
             style={{
-              backgroundColor: organization?.primaryColor || branding.primaryColor || 'hsl(221.2 83.2% 53.3%)'
+              backgroundColor:
+                organization?.primaryColor ||
+                branding.primaryColor ||
+                "hsl(221.2 83.2% 53.3%)",
             }}
           >
-            {organization?.name?.charAt(0).toUpperCase() || 'H'}
+            {helpOrbit
+              ? "H"
+              : organization?.name?.charAt(0).toUpperCase() || "H"}
           </div>
         )
       )}
@@ -74,32 +99,46 @@ export function BrandedLogo({ size = 'md', showFallback = true, className, helpO
   )
 }
 
-export function BrandedTextLogo({ showTagline = false, size = 'md', className }: BrandedTextLogoProps) {
+export function BrandedTextLogo({
+  showTagline = false,
+  size = "md",
+  className,
+  helpOrbit = false,
+}: BrandedTextLogoProps) {
   const { organization } = useTheme()
 
-  // Map size to text size classes
-  const headingSizeClasses: Record<NonNullable<BrandedTextLogoProps["size"]>, string> = {
-    sm: 'text-lg',
-    md: 'text-2xl',
-    lg: 'text-3xl',
-    xl: 'text-4xl'
+  const headingSizeClasses: Record<
+    NonNullable<BrandedTextLogoProps["size"]>,
+    string
+  > = {
+    sm: "text-lg",
+    md: "text-2xl",
+    lg: "text-3xl",
+    xl: "text-4xl",
   }
 
-  const taglineSizeClasses: Record<NonNullable<BrandedTextLogoProps["size"]>, string> = {
-    sm: 'text-xs',
-    md: 'text-sm',
-    lg: 'text-base',
-    xl: 'text-lg'
+  const taglineSizeClasses: Record<
+    NonNullable<BrandedTextLogoProps["size"]>,
+    string
+  > = {
+    sm: "text-xs",
+    md: "text-sm",
+    lg: "text-base",
+    xl: "text-lg",
   }
 
   return (
     <div className={cn("flex flex-col", className)}>
       <h1 className={cn("font-bold text-gray-900", headingSizeClasses[size])}>
-        {organization?.name || 'HelpOrbit'}
+        {helpOrbit ? "HelpOrbit" : organization?.name || "HelpOrbit"}
       </h1>
       {showTagline && (
         <p className={cn("mt-1 text-gray-600", taglineSizeClasses[size])}>
-          {organization ? 'Support Portal' : 'Multi-tenant ticketing system'}
+          {helpOrbit
+            ? "Multi-tenant ticketing system"
+            : organization
+            ? "Support Portal"
+            : "Multi-tenant ticketing system"}
         </p>
       )}
     </div>
@@ -107,38 +146,45 @@ export function BrandedTextLogo({ showTagline = false, size = 'md', className }:
 }
 
 interface LogoWithTextProps {
-  size?: 'sm' | 'md' | 'lg' | 'xl'
-  orientation?: 'horizontal' | 'vertical'
+  size?: "sm" | "md" | "lg" | "xl"
+  orientation?: "horizontal" | "vertical"
   showTagline?: boolean
   showLogo?: boolean
   interactive?: boolean
   className?: string
   onClick?: () => void
+  helpOrbit?: boolean
 }
 
 export function LogoWithText({
-  size = 'md',
-  orientation = 'horizontal',
+  size = "md",
+  orientation = "horizontal",
   showTagline = false,
   showLogo = true,
   interactive = false,
   className,
-  onClick
+  onClick,
+  helpOrbit = false,
 }: LogoWithTextProps) {
   const { organization } = useTheme()
 
-  const isVertical = orientation === 'vertical'
+  const isVertical = orientation === "vertical"
   const baseClasses = cn(
     "flex items-center",
     isVertical ? "flex-col space-y-2" : "flex-row space-x-3",
-    interactive && "cursor-pointer transition-opacity hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 rounded-md",
+    interactive &&
+      "cursor-pointer transition-opacity hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 rounded-md",
     className
   )
 
   const content = (
     <>
-      {showLogo && <BrandedLogo size={size} />}
-      <BrandedTextLogo showTagline={showTagline} size={size} />
+      {showLogo && <BrandedLogo size={size} helpOrbit={helpOrbit} />}
+      <BrandedTextLogo
+        showTagline={showTagline}
+        size={size}
+        helpOrbit={helpOrbit}
+      />
     </>
   )
 
@@ -148,30 +194,27 @@ export function LogoWithText({
         className={baseClasses}
         onClick={onClick}
         type="button"
-        aria-label={`${organization?.name || 'HelpOrbit'} logo`}
+        aria-label={`${organization?.name || "HelpOrbit"} logo`}
       >
         {content}
       </button>
     )
   }
 
-  return (
-    <div className={baseClasses}>
-      {content}
-    </div>
-  )
+  return <div className={baseClasses}>{content}</div>
 }
 
-// Convenience component for organization logo with text
-export function OrgLogoWithText(props: Omit<LogoWithTextProps, 'showLogo'>) {
+export function OrgLogoWithText(
+  props: Omit<LogoWithTextProps, "showLogo">
+) {
   return <LogoWithText {...props} showLogo={true} />
 }
 
-// Compact variant for headers/navigation
 export function CompactOrgLogo({
   className,
-  onClick
-}: Pick<LogoWithTextProps, 'className' | 'onClick'>) {
+  onClick,
+  helpOrbit = false,
+}: Pick<LogoWithTextProps, "className" | "onClick" | "helpOrbit">) {
   return (
     <LogoWithText
       size="sm"
@@ -180,20 +223,22 @@ export function CompactOrgLogo({
       interactive={!!onClick}
       onClick={onClick}
       className={className}
+      helpOrbit={helpOrbit}
     />
   )
 }
 
-// Full branding variant for landing pages
 export function FullBrandingLogo({
-  className
-}: Pick<LogoWithTextProps, 'className'>) {
+  className,
+  helpOrbit = false,
+}: Pick<LogoWithTextProps, "className" | "helpOrbit">) {
   return (
     <LogoWithText
       size="xl"
       orientation="vertical"
       showTagline={true}
       className={className}
+      helpOrbit={helpOrbit}
     />
   )
 }

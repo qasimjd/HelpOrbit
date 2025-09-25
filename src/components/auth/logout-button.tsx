@@ -10,12 +10,14 @@ interface LogoutButtonProps {
   children?: React.ReactNode
   className?: string
   variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link'
+  afterLogoutRedirect?: string
 }
 
 export function LogoutButton({ 
   children, 
   className,
-  variant = "ghost" 
+  variant = "ghost" ,
+  afterLogoutRedirect,
 }: LogoutButtonProps) {
   const router = useRouter()
   
@@ -25,11 +27,11 @@ export function LogoutButton({
         fetchOptions: {
           onSuccess: () => {
             // Clear any cached data and redirect to login/organization selection
-            router.push('/select-organization')
+            router.push(afterLogoutRedirect ?? '/select-organization')
           },
           onError: () => {
             // Even if there's an error, redirect to auth page
-            router.push('/select-organization')
+            router.push(afterLogoutRedirect ?? '/select-organization')
           },
         },
       })
@@ -49,7 +51,7 @@ export function LogoutButton({
       {children || (
         <>
           <LogOut className="w-4 h-4 mr-2" />
-          Sign out
+          Log out
         </>
       )}
     </Button>

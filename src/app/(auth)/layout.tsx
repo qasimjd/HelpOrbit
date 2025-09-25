@@ -1,6 +1,4 @@
 import React from 'react'
-import { redirect } from 'next/navigation'
-import { getServerSession } from '@/lib/session'
 
 interface AuthLayoutProps {
   children: React.ReactNode

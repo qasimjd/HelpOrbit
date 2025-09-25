@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Building, Loader2, Check, X } from "lucide-react";
+import { Loader2, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,14 +24,21 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { createOrganizationAction, checkOrganizationSlugAction } from "@/server/actions/organization-actions";
+import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import {
+  createOrganizationAction,
+  checkOrganizationSlugAction,
+} from "@/server/actions/organization-actions";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useSession } from "@/lib/auth-client";
 import { AuthPromptDialog } from "@/components/auth/auth-prompt-dialog";
-import { createOrganizationSchema, type CreateOrganizationData } from "@/schemas/organization";
-import { generateDefaultLogo, getInitials } from "@/lib/utils";
-import { BrandedLogo } from "../branding/branded-logo";
+import {
+  createOrganizationSchema,
+  type CreateOrganizationData,
+} from "@/schemas/organization";
+import { generateDefaultLogo, generateSlug } from "@/lib/utils";
+import { BrandedLogo } from "@/components/branding/branded-logo";
+import { Loading } from "@/components/sheard/loading";
 
 type CreateOrganizationForm = CreateOrganizationData;
 
@@ -51,9 +58,8 @@ export function CreateOrganizationDialog({
   const [checkingSlug, setCheckingSlug] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [defaultLogo] = useState(() => generateDefaultLogo());
+  const [slugEdited, setSlugEdited] = useState(false);
 
-
-  // Check if user is authenticated
   const { data: session, isPending } = useSession();
   const isAuthenticated = !!session?.user;
 
@@ -69,40 +75,41 @@ export function CreateOrganizationDialog({
 
   const watchedName = form.watch("name");
   const watchedSlug = form.watch("slug");
-  const debouncedSlug = useDebounce(watchedSlug, 500);
+  const debouncedSlug = useDebounce(watchedSlug, 800);
 
-  // Handle dialog opening - check authentication first
   useEffect(() => {
-    if (open && !isPending) {
-      if (!isAuthenticated) {
-        // Close the create dialog and show auth prompt
-        onOpenChange(false);
-        setShowAuthPrompt(true);
-        return;
-      }
+    if (open && !isPending && !isAuthenticated) {
+      onOpenChange(false);
+      setShowAuthPrompt(true);
+    }
+    if (!open) {
+      setSlugEdited(false);
     }
   }, [open, isAuthenticated, isPending, onOpenChange]);
 
-  // Auto-generate slug from name
   useEffect(() => {
-    if (watchedName && !watchedSlug) {
-      const generatedSlug = watchedName
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, "")
-        .replace(/\s+/g, "-")
-        .replace(/-+/g, "-")
-        .slice(0, 50);
-      form.setValue("slug", generatedSlug);
+    if (watchedName && !slugEdited) {
+      form.setValue("slug", generateSlug(watchedName));
     }
-  }, [watchedName, watchedSlug, form]);
+  }, [watchedName, slugEdited, form]);
 
-  // Check slug availability
+  useEffect(() => {
+    if (slugEdited && watchedSlug) {
+      const normalized = generateSlug(watchedSlug);
+      if (normalized !== watchedSlug) {
+        form.setValue("slug", normalized);
+      }
+    }
+  }, [watchedSlug, slugEdited, form]);
+
   useEffect(() => {
     if (debouncedSlug && debouncedSlug.length >= 3) {
       setCheckingSlug(true);
       checkOrganizationSlugAction(debouncedSlug)
         .then((result) => {
-          setSlugAvailable(result.success ? result.data?.available || false : false);
+          setSlugAvailable(
+            result.success ? result.data?.available || false : false
+          );
         })
         .catch(() => setSlugAvailable(false))
         .finally(() => setCheckingSlug(false));
@@ -114,9 +121,9 @@ export function CreateOrganizationDialog({
   const onSubmit = async (data: CreateOrganizationForm) => {
     setIsSubmitting(true);
     try {
-      const metadata = data.description ? { description: data.description } : undefined;
-
-      // Generate default logo if no logo is provided
+      const metadata = data.description
+        ? { description: data.description }
+        : undefined;
       const logoUrl = data.logo || generateDefaultLogo();
 
       const result = await createOrganizationAction({
@@ -135,30 +142,21 @@ export function CreateOrganizationDialog({
           message: result.error || "Failed to create organization",
         });
       }
-    } catch (error) {
-      form.setError("root", {
-        message: "An unexpected error occurred",
-      });
+    } catch {
+      form.setError("root", { message: "An unexpected error occurred" });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const slugStatus = () => {
-    if (!watchedSlug) return null;
-    if (checkingSlug) return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
-    if (slugAvailable === true) return <Check className="h-4 w-4 text-green-600" />;
-    if (slugAvailable === false) return <X className="h-4 w-4 text-red-600" />;
-    return null;
-  };
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-5xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <BrandedLogo size="sm" />
+              <BrandedLogo size="sm" helpOrbit/>
               Create Organization
             </DialogTitle>
             <DialogDescription>
@@ -169,8 +167,7 @@ export function CreateOrganizationDialog({
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-4">
-                {/* Organization Preview */}
-                <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
+                <div className="flex items-center gap-3 py-4 bg-muted/50 rounded-lg">
                   <Avatar className="h-12 w-12 rounded-lg">
                     <AvatarImage
                       src={form.watch("logo") || defaultLogo}
@@ -220,9 +217,30 @@ export function CreateOrganizationDialog({
                             {...field}
                             disabled={isSubmitting}
                             className="pr-10"
+                            onChange={(e) => {
+                              setSlugEdited(true);
+                              field.onChange(e.target.value);
+                            }}
                           />
                           <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                            {slugStatus()}
+                            {checkingSlug && (
+                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            )}
+                            {slugAvailable === true && (
+                              <Check className="h-4 w-4 text-green-600" />
+                            )}
+                            {slugAvailable === false && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  form.setValue("slug", "");
+                                  setSlugEdited(false);
+                                  setSlugAvailable(null);
+                                }}
+                              >
+                                <X className="h-4 w-4 text-red-600" />
+                              </button>
+                            )}
                           </div>
                         </div>
                       </FormControl>
@@ -253,7 +271,9 @@ export function CreateOrganizationDialog({
                         />
                       </FormControl>
                       <FormDescription>
-                        URL to your organization's logo image. If left empty, a colorful logo with initials will be generated automatically.
+                        URL to your organization's logo image. If left empty, a
+                        colorful logo with initials will be generated
+                        automatically.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -302,7 +322,9 @@ export function CreateOrganizationDialog({
                   type="submit"
                   disabled={isSubmitting || slugAvailable === false}
                 >
-                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isSubmitting && (
+                    <Loading color="white" />
+                  )}
                   Create Organization
                 </Button>
               </DialogFooter>
@@ -311,7 +333,6 @@ export function CreateOrganizationDialog({
         </DialogContent>
       </Dialog>
 
-      {/* Authentication Prompt Dialog */}
       <AuthPromptDialog
         open={showAuthPrompt}
         onOpenChange={setShowAuthPrompt}

@@ -3,15 +3,15 @@
 import React, { useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Search, ArrowRight, Loader2, Plus } from 'lucide-react'
+import { Search, ArrowRight, Plus } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { CreateOrganizationDialog } from '@/components/auth/create-organization-dialog'
 import { searchOrganizations } from '@/server/actions/organization-actions'
 import Image from 'next/image'
+import { Loading } from '@/components/sheard/loading'
 
 interface OrganizationResult {
   id: string
@@ -32,7 +32,6 @@ export function OrganizationFinder({ onOrganizationSelect, className }: Organiza
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [organizations, setOrganizations] = useState<OrganizationResult[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
 
@@ -44,7 +43,6 @@ export function OrganizationFinder({ onOrganizationSelect, className }: Organiza
       setOrganizations([])
       return
     }
-
     setSearchLoading(true)
     try {
       const results = await searchOrganizations(term)
@@ -62,18 +60,21 @@ export function OrganizationFinder({ onOrganizationSelect, className }: Organiza
     }
   }, [])
 
+
+
   // Debounced search
   React.useEffect(() => {
     const timeoutId = setTimeout(() => {
       handleSearch(searchTerm)
-    }, 300)
+    }, 200)
 
     return () => clearTimeout(timeoutId)
   }, [searchTerm, handleSearch])
 
+
+
   const handleOrganizationSelect = useCallback(async (org: OrganizationResult) => {
     setIsLoading(true)
-
     try {
       if (onOrganizationSelect) {
         onOrganizationSelect(org)
@@ -105,7 +106,7 @@ export function OrganizationFinder({ onOrganizationSelect, className }: Organiza
 
       {/* Create New Organization Button */}
       {!searchTerm.trim() && (
-        <Link href="/create-organization">
+        <Link href="/org">
           <Button
             variant="outline"
             className="flex items-center gap-2 w-full"
@@ -121,8 +122,7 @@ export function OrganizationFinder({ onOrganizationSelect, className }: Organiza
         <div className="space-y-3">
           {searchLoading ? (
             <div className="flex flex-col items-center py-8">
-              <Loader2 className="w-10 h-10 animate-spin text-primary mb-3" />
-              <p className="text-base text-muted-foreground font-medium">Searching organizations...</p>
+              <Loading text="Searching organizations..." />
             </div>
           ) : organizations.length > 0 ? (
             <>
@@ -133,7 +133,7 @@ export function OrganizationFinder({ onOrganizationSelect, className }: Organiza
                 {organizations.map((org: OrganizationResult) => (
                   <Card
                     key={org.id}
-                    className="cursor-pointer transition-all shadow-lg"
+                    className="cursor-pointer transition-all shadow-xl border hover:shadow-lg rounded-2xl"
                     onClick={() => handleOrganizationSelect(org)}
                   >
                     <CardContent className="p-2">
@@ -184,15 +184,6 @@ export function OrganizationFinder({ onOrganizationSelect, className }: Organiza
           )}
         </div>
       )}
-      <CreateOrganizationDialog
-        open={showCreateDialog}
-        onOpenChange={setShowCreateDialog}
-        onSuccess={(organization) => {
-          if (organization?.slug) {
-            router.push(`/org/${organization.slug}/dashboard`);
-          }
-        }}
-      />
     </div>
   )
 }

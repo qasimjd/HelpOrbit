@@ -2,6 +2,7 @@
 
 import React, { useState } from "react"
 import Link from "next/link"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react"
 import { SwitchOrganizationButton } from "@/components/auth/switch-organization-button"
 import { Button } from "@/components/ui/button"
@@ -26,35 +27,49 @@ export function LoginForm({
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [isPending, setIsPending] = useState(false)
-  const [state, setState] = useState({
+  const [state, setState] = useState<{
+    success: boolean
+    errors: Record<string, string[]>
+    message: string
+    redirectTo?: string
+  }>({
     success: false,
-    errors: {} as Record<string, string[]>,
+    errors: {},
     message: "",
   })
+  const router = useRouter()
+  const searchParams = useSearchParams();
+  const from = searchParams.get("from");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsPending(true)
 
     const formData = new FormData(e.currentTarget)
-    
-    // Add organizationSlug and intent to formData if needed
+
     if (organizationSlug) {
-      formData.set('organizationSlug', organizationSlug)
+      formData.set("organizationSlug", organizationSlug)
     }
-    
-    // Add intent - if no org slug, assume create-organization flow
-    formData.set('intent', organizationSlug ? 'join-organization' : 'create-organization')
+
+    formData.set(
+      "intent",
+      organizationSlug ? "join-organization" : "create-organization"
+    )
 
     try {
       const result = await loginAction(null, formData)
       setState(result)
+
+      // Handle client-side redirect on success
+      if (result.success && result.redirectTo) {
+        router.push(from ?? result.redirectTo)
+      }
     } catch (error) {
-      console.error('Form submission error:', error)
+      console.error("Form submission error:", error)
       setState({
         success: false,
         errors: {},
-        message: 'An unexpected error occurred. Please try again.',
+        message: "An unexpected error occurred. Please try again.",
       })
     } finally {
       setIsPending(false)
@@ -63,8 +78,7 @@ export function LoginForm({
 
   return (
     <div className={cn("space-y-6", className)}>
-      <form onSubmit={handleSubmit} className="space-y-4">
-
+      <form onSubmit={handleSubmit} className="space-y-4 w-full">
         {/* Error Message */}
         {!state.success && state.message && (
           <Alert variant="destructive">
@@ -86,9 +100,9 @@ export function LoginForm({
             required
             placeholder="Enter your email"
             className={cn(
-              "transition-colors",
+              "input-brand transition-colors",
               state.errors?.email &&
-              "border-destructive focus-visible:ring-destructive"
+              "border-destructive focus:border-destructive"
             )}
             disabled={isPending}
           />
@@ -114,9 +128,9 @@ export function LoginForm({
               required
               placeholder="Enter your password"
               className={cn(
-                "pr-10 transition-colors",
+                "input-brand pr-10 transition-colors",
                 state.errors?.password &&
-                "border-destructive focus-visible:ring-destructive"
+                "border-destructive focus:border-destructive"
               )}
               disabled={isPending}
             />
@@ -134,7 +148,9 @@ export function LoginForm({
             </button>
           </div>
           {state.errors?.password && (
-            <p className="text-sm text-destructive">{state.errors.password[0]}</p>
+            <p className="text-sm text-destructive">
+              {state.errors.password[0]}
+            </p>
           )}
         </div>
 
@@ -154,7 +170,6 @@ export function LoginForm({
             >
               Remember me
             </Label>
-            {/* Hidden input for form submission */}
             <input
               type="hidden"
               name="rememberMe"
@@ -162,7 +177,11 @@ export function LoginForm({
             />
           </div>
           <Link
-            href={organizationSlug ? `/org/${organizationSlug}/forgot-password` : "/forgot-password"}
+            href={
+              organizationSlug
+                ? `/org/${organizationSlug}/forgot-password`
+                : "/forgot-password"
+            }
             className="text-sm text-primary hover:underline"
           >
             Forgot password?
@@ -170,11 +189,7 @@ export function LoginForm({
         </div>
 
         {/* Submit Button */}
-        <Button
-          type="submit"
-          disabled={isPending}
-          className="w-full"
-        >
+        <Button type="submit" disabled={isPending} className="w-full">
           {isPending ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -190,7 +205,7 @@ export function LoginForm({
       {showModeSwitch && (
         <div className="text-center text-sm text-muted-foreground">
           <p>
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link
               href="/signup"
               className="font-medium text-primary hover:underline"
@@ -203,22 +218,20 @@ export function LoginForm({
 
       {/* Organization-specific content */}
       {organizationSlug && !showModeSwitch && (
-        <>
-          <div className="text-center text-sm text-muted-foreground space-y-2">
-            <p>
-              Don't have an account?{" "}
-              <Link
-                href={`/org/${organizationSlug}/register`}
-                className="font-medium text-primary hover:underline"
-              >
-                Contact your administrator
-              </Link>
-            </p>
-            <p>
-              <SwitchOrganizationButton />
-            </p>
-          </div>
-        </>
+        <div className="text-center text-sm text-muted-foreground space-y-2">
+          <p>
+            Don&apos;t have an account?{" "}
+            <Link
+              href={`/org/${organizationSlug}/register`}
+              className="font-medium text-primary hover:underline"
+            >
+              Contact your administrator
+            </Link>
+          </p>
+          <p>
+            <SwitchOrganizationButton />
+          </p>
+        </div>
       )}
     </div>
   )

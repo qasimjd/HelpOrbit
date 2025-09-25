@@ -1,6 +1,5 @@
 "use server"
 
-import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
@@ -36,11 +35,11 @@ export async function loginAction(prevState: any, formData: FormData) {
 
     const rememberMe = formData.get('rememberMe') === 'on'
 
-    console.log('Raw form data:', { 
-      email: rawFormData.email, 
-      hasPassword: !!rawFormData.password, 
-      organizationSlug: rawFormData.organizationSlug, 
-      intent: rawFormData.intent 
+    console.log('Raw form data:', {
+      email: rawFormData.email,
+      hasPassword: !!rawFormData.password,
+      organizationSlug: rawFormData.organizationSlug,
+      intent: rawFormData.intent
     })
 
     // Clean up the form data - convert null/empty intent to undefined
@@ -50,7 +49,7 @@ export async function loginAction(prevState: any, formData: FormData) {
     }
 
     // For general auth flow (intent=create-organization), we don't need organizationSlug
-    const schemaToUse = cleanedFormData.intent === 'create-organization' 
+    const schemaToUse = cleanedFormData.intent === 'create-organization'
       ? loginWithoutOrgSchema
       : loginSchema.extend({ intent: z.string().optional() })
 
@@ -58,7 +57,7 @@ export async function loginAction(prevState: any, formData: FormData) {
 
     // Validate input
     const validatedFields = schemaToUse.safeParse(cleanedFormData)
-    
+
     if (!validatedFields.success) {
       console.log('Validation failed:', validatedFields.error.flatten().fieldErrors)
       return {
@@ -73,7 +72,7 @@ export async function loginAction(prevState: any, formData: FormData) {
 
     // Sign in with Better Auth
     console.log('Attempting sign in for email:', email, 'with org slug:', organizationSlug)
-    
+
     let signInResult;
     try {
       signInResult = await auth.api.signInEmail({
@@ -87,10 +86,10 @@ export async function loginAction(prevState: any, formData: FormData) {
       console.log('Sign in result:', signInResult ? 'Success' : 'Failed', signInResult?.user ? 'Has user' : 'No user')
     } catch (authError: any) {
       console.error('Auth API error:', authError)
-      
+
       // Simply display the backend error message
       const errorMessage = authError?.body?.message || authError?.message || 'Invalid email or password. Please try again.'
-      
+
       return {
         success: false,
         message: errorMessage,
@@ -109,8 +108,13 @@ export async function loginAction(prevState: any, formData: FormData) {
 
     // Handle different intents
     if (intent === 'create-organization') {
-      // After successful login, redirect to select organization with create intent
-      redirect('/select-organization?create=true')
+      // After successful login, return redirect path for client-side navigation
+      return {
+        success: true,
+        message: 'Login successful!',
+        errors: {},
+        redirectTo: '/org'
+      }
     } else if (organizationSlug) {
       // Original organization-specific login flow
       // After successful login, check if user has access to the organization
@@ -134,7 +138,7 @@ export async function loginAction(prevState: any, formData: FormData) {
         console.log('User organizations found:', userOrgs?.length || 0)
         console.log('Looking for organization slug:', organizationSlug)
 
-        const hasAccess = userOrgs?.some((org: any) => 
+        const hasAccess = userOrgs?.some((org: any) =>
           org.slug === organizationSlug
         )
 
@@ -154,19 +158,30 @@ export async function loginAction(prevState: any, formData: FormData) {
         console.log('Proceeding with login despite organization check failure')
       }
 
-      // Redirect to dashboard
-      redirect(`/org/${organizationSlug}/dashboard`)
+      // Return redirect path for client-side navigation
+      return {
+        success: true,
+        message: 'Login successful!',
+        errors: {},
+        redirectTo: `/org/${organizationSlug}/dashboard`
+      }
     } else {
       // Default redirect for general login
-      redirect('/select-organization')
+      return {
+        success: true,
+        message: 'Login successful!',
+        errors: {},
+        redirectTo: '/select-organization'
+      }
     }
   } catch (error) {
-    console.error('Login error:', error)
-    
+    // Check if this is a Next.js redirect first (before logging as error)
     if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
-      throw error // Re-throw redirect errors
+      throw error // Re-throw redirect errors - this is normal Next.js behavior
     }
-    
+
+    console.error('Login error:', error)
+
     return {
       success: false,
       message: 'An unexpected error occurred. Please try again.',
@@ -186,7 +201,7 @@ export async function forgotPasswordAction(prevState: any, formData: FormData) {
 
     // Validate input
     const validatedFields = forgotPasswordSchema.safeParse(rawFormData)
-    
+
     if (!validatedFields.success) {
       return {
         success: false,
@@ -213,7 +228,7 @@ export async function forgotPasswordAction(prevState: any, formData: FormData) {
     }
   } catch (error) {
     console.error('Forgot password error:', error)
-    
+
     return {
       success: false,
       message: 'An unexpected error occurred. Please try again.',
@@ -227,10 +242,10 @@ export async function validateOrganizationAction(slug: string) {
   try {
     // Import database query function
     const { getOrganizationBySlug } = await import('@/server/db/queries')
-    
+
     // Query the database for the organization
     const organization = await getOrganizationBySlug(slug)
-    
+
     if (organization) {
       // Parse metadata if it exists (it might contain additional settings like primaryColor)
       let metadata = {};
@@ -268,7 +283,7 @@ export async function validateOrganizationAction(slug: string) {
         }
       }
     }
-    
+
     return {
       exists: false,
       organization: null
@@ -304,12 +319,12 @@ export async function signUpAction(prevState: any, formData: FormData) {
       intent: formData.get('intent') as string,
     }
 
-    console.log('Sign up raw form data:', { 
-      email: rawFormData.email, 
-      hasPassword: !!rawFormData.password, 
+    console.log('Sign up raw form data:', {
+      email: rawFormData.email,
+      hasPassword: !!rawFormData.password,
       name: rawFormData.name,
-      organizationSlug: rawFormData.organizationSlug, 
-      intent: rawFormData.intent 
+      organizationSlug: rawFormData.organizationSlug,
+      intent: rawFormData.intent
     })
 
     // For general auth flow (intent=create-organization), we don't need organizationSlug
@@ -319,7 +334,7 @@ export async function signUpAction(prevState: any, formData: FormData) {
 
     // Validate input
     const validatedFields = signUpSchemaToUse.safeParse(rawFormData)
-    
+
     if (!validatedFields.success) {
       return {
         success: false,
@@ -332,13 +347,6 @@ export async function signUpAction(prevState: any, formData: FormData) {
     const intent = 'intent' in validatedFields.data ? validatedFields.data.intent : rawFormData.intent
     const organizationSlug = 'organizationSlug' in validatedFields.data ? validatedFields.data.organizationSlug : undefined
 
-    // Determine callback URL based on intent
-    const callbackURL = intent === 'create-organization' 
-      ? `${process.env.NEXT_PUBLIC_APP_URL}/select-organization?create=true`
-      : organizationSlug 
-        ? `${process.env.NEXT_PUBLIC_APP_URL}/org/${organizationSlug}/dashboard`
-        : `${process.env.NEXT_PUBLIC_APP_URL}/select-organization`
-
     // Sign up with Better Auth
     let signUpResult;
     try {
@@ -347,16 +355,16 @@ export async function signUpAction(prevState: any, formData: FormData) {
           email,
           password,
           name,
-          callbackURL
+          callbackURL: "/email-verified"
         },
         headers: await headers(),
       })
     } catch (authError: any) {
       console.error('Better Auth signup error:', authError)
-      
+
       // Simply display the backend error message
       const errorMessage = authError?.body?.message || authError?.message || 'Failed to create account. Please try again.'
-      
+
       return {
         success: false,
         message: errorMessage,
@@ -378,22 +386,24 @@ export async function signUpAction(prevState: any, formData: FormData) {
         success: true,
         message: 'Account created successfully! You can now create your organization.',
         errors: {},
-        redirect: '/select-organization?create=true'
+        redirectTo: '/select-organization'
       }
     } else {
       return {
         success: true,
         message: 'Account created successfully! Please check your email to verify your account.',
-        errors: {}
+        errors: {},
+        redirectTo: organizationSlug ? `/org/${organizationSlug}/dashboard` : '/select-organization'
       }
     }
   } catch (error) {
-    console.error('Sign up error:', error)
-    
+    // Check if this is a Next.js redirect first (before logging as error)
     if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
-      throw error // Re-throw redirect errors
+      throw error // Re-throw redirect errors - this is normal Next.js behavior
     }
-    
+
+    console.error('Sign up error:', error)
+
     return {
       success: false,
       message: 'An unexpected error occurred. Please try again.',
@@ -408,15 +418,47 @@ export async function logoutAction() {
     await auth.api.signOut({
       headers: await headers()
     })
-    
-    redirect('/select-organization')
+
+    return {
+      success: true,
+      message: 'Logged out successfully',
+      redirectTo: '/select-organization'
+    }
   } catch (error) {
     console.error('Logout error:', error)
-    
-    if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
-      throw error // Re-throw redirect errors
+    return {
+      success: false,
+      message: 'Failed to logout. Please try again.',
+      redirectTo: null
     }
-    
-    throw error
+  }
+}
+
+// Server action to send verification email
+export async function sendVerificationEmailAction() {
+  try {
+    // You may need to get the current user's email from session or context
+    const session = await auth.api.getSession({ headers: await headers() });
+    const email = session?.user?.email;
+    if (!email) throw new Error('No user email found for verification email.');
+
+    await auth.api.sendVerificationEmail({
+      body: { email },
+      headers: await headers()
+    })
+
+    return {
+      success: true,
+      message: 'Verification email sent successfully! Please check your inbox.'
+    }
+  } catch (error: any) {
+    console.error('Send verification email error:', error)
+
+    const errorMessage = error?.body?.message || error?.message || 'Failed to send verification email. Please try again.'
+
+    return {
+      success: false,
+      message: errorMessage
+    }
   }
 }
