@@ -136,7 +136,7 @@ export function OrganizationFinder({ onOrganizationSelect, className }: Organiza
                     className="cursor-pointer transition-all shadow-xl border hover:shadow-lg rounded-2xl"
                     onClick={() => handleOrganizationSelect(org)}
                   >
-                    <CardContent className="p-2">
+                    <CardContent className="px-4 py-2 group">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
                           <div className="w-10 h-10 relative rounded-full overflow-hidden border">
@@ -162,7 +162,7 @@ export function OrganizationFinder({ onOrganizationSelect, className }: Organiza
                               Public
                             </Badge>
                           )}
-                          <ArrowRight className="w-5 h-5 text-muted-foreground" />
+                          <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
                         </div>
                       </div>
                     </CardContent>

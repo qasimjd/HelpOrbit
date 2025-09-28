@@ -62,8 +62,8 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <p className="mt-1 text-muted-foreground">
             Welcome back! Here's what's happening with your support tickets.
           </p>
         </div>
@@ -87,13 +87,13 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
                     <IconComponent className={`w-6 h-6 ${stat.color}`} />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-sm font-medium text-muted-foreground">
                       {stat.title}
                     </p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <span className="text-2xl font-bold">
                       {stat.value}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    </span>
+                    <p className="text-xs mt-1 text-muted-foreground">
                       {stat.change}
                     </p>
                   </div>
@@ -126,7 +126,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
                     <div className="flex items-center space-x-3">
                       <Link 
                         href={`/org/${slug}/dashboard/tickets/${ticket.id}`}
-                        className="font-medium text-gray-900 hover:text-brand-primary"
+                        className="font-medium hover:text-brand-primary"
                       >
                         #{ticket.id}
                       </Link>
@@ -146,7 +146,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
                     <p className="text-sm text-gray-900 mt-1 truncate">
                       {ticket.title}
                     </p>
-                    <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
+                    <div className="flex items-center space-x-4 mt-2 text-xs text-muted-foreground">
                       <span>Customer: {ticket.customer}</span>
                       <span>Assignee: {ticket.assignee || 'Unassigned'}</span>
                       <span>{ticket.created}</span>
@@ -155,8 +155,8 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
                 </div>
               ))}
               {recentTickets.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <TicketIcon className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <div className="text-center py-8 text-muted-foreground">
+                  <TicketIcon className="w-12 h-12 mx-auto mb-4" />
                   <p>No tickets yet</p>
                   <p className="text-sm">Create your first ticket to get started</p>
                 </div>
@@ -175,15 +175,15 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Avg. Response Time</span>
+              <span className="text-sm text-muted-foreground">Avg. Response Time</span>
               <span className="text-sm font-medium">2.4 hours</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Resolution Rate</span>
+              <span className="text-sm text-muted-foreground">Resolution Rate</span>
               <span className="text-sm font-medium">89%</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Customer Satisfaction</span>
+              <span className="text-sm text-muted-foreground">Customer Satisfaction</span>
               <span className="text-sm font-medium">4.8/5.0</span>
             </div>
             <div className="pt-2 border-t">

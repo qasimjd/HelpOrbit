@@ -17,6 +17,7 @@ import {
   updateOrganizationSchema,
   checkOrganizationSlugSchema
 } from "@/schemas/organization";
+import { getOrganizationBySlug, getOrganizations, getUserOrganizations } from "@/server/db/queries";
 
 /**
  * Create a new organization
@@ -227,7 +228,6 @@ export async function listUserOrganizationsAction(): Promise<ActionResponse<any[
     // Ensure user is authenticated
     const session = await requireServerSession();
     
-    const { getUserOrganizations } = await import('@/server/db/queries');
     const userOrgs = await getUserOrganizations(session.user.id);
 
     return {
@@ -394,7 +394,6 @@ export async function searchOrganizations(searchTerm: string) {
   }
 
   try {
-    const { getOrganizations } = await import('@/server/db/queries');
     const organizations = await getOrganizations();
     
     // Filter organizations based on search term
@@ -433,7 +432,6 @@ export async function searchOrganizations(searchTerm: string) {
  */
 export async function getOrganizationInfo(slug: string) {
   try {
-    const { getOrganizationBySlug } = await import('@/server/db/queries');
     const org = await getOrganizationBySlug(slug);
     if (!org) return null;
     

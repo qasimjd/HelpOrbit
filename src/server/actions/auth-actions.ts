@@ -11,6 +11,7 @@ import {
   serverSignUpWithoutOrgSchema,
   forgotPasswordSchema
 } from '@/schemas/auth'
+import { getOrganizationBySlug } from '@/server/db/queries'
 
 // Server action for login
 export async function loginAction(prevState: any, formData: FormData) {
@@ -240,8 +241,6 @@ export async function forgotPasswordAction(prevState: any, formData: FormData) {
 // Server action to validate organization
 export async function validateOrganizationAction(slug: string) {
   try {
-    // Import database query function
-    const { getOrganizationBySlug } = await import('@/server/db/queries')
 
     // Query the database for the organization
     const organization = await getOrganizationBySlug(slug)

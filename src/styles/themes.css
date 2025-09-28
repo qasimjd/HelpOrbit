@@ -1,57 +1,31 @@
-/* Theme Variables - Dynamic single primary color theming with light/dark mode support */
+/* Dynamic Organization Primary Color Theming with next-themes integration */
 :root {
-  /* Default HelpOrbit primary color */
-  --brand-primary: #000000;
-  
-  /* Static theme colors - automatically adjusted based on light/dark mode */
-  --brand-text: #0f172a;
-  --brand-background: #ffffff;
-  --brand-card: #f8fafc;
-  
+  /* Default organization primary color - Orange */
+  --brand-primary: #f97316;
+
   /* Primary color variations - dynamically generated from --brand-primary */
-  --brand-primary-rgb: 0, 0, 0;
-  --brand-primary-50: rgba(0, 0, 0, 0.05);
-  --brand-primary-100: rgba(0, 0, 0, 0.1);
-  --brand-primary-200: rgba(0, 0, 0, 0.2);
-  --brand-primary-300: rgba(0, 0, 0, 0.3);
-  --brand-primary-500: rgba(0, 0, 0, 0.5);
-  --brand-primary-700: rgba(0, 0, 0, 0.7);
-  --brand-primary-900: rgba(0, 0, 0, 0.9);
-  
+  --brand-primary-rgb: 249, 115, 22;
+  --brand-primary-500: rgba(249, 115, 22, 0.5);
+  --brand-primary-700: rgba(249, 115, 22, 0.7);
+  --brand-primary-900: rgba(249, 115, 22, 0.9);
+
   /* Auto-generated accent (darker version of primary) */
-  --brand-accent: #333333;
-}
+  --brand-accent: #ea580c;
 
-/* Dark mode theming - Better contrast with consistent colors */
-body.dark {
-  --brand-text: #f8fafc;
-  --brand-background: #0f172a;
-  --brand-card: #1e293b;
-  
-  /* Dark mode adjustments for primary color transparency */
-  --brand-primary-50: rgba(var(--brand-primary-rgb), 0.1);
-  --brand-primary-100: rgba(var(--brand-primary-rgb), 0.15);
-  --brand-primary-200: rgba(var(--brand-primary-rgb), 0.25);
-  --brand-primary-300: rgba(var(--brand-primary-rgb), 0.35);
-}
-
-body.light {
-  --brand-text: #0f172a;
-  --brand-background: #ffffff;
-  --brand-card: #f8fafc;
-  
-  /* Light mode transparency values */
+  /* Light mode (default) */
   --brand-primary-50: rgba(var(--brand-primary-rgb), 0.05);
   --brand-primary-100: rgba(var(--brand-primary-rgb), 0.1);
   --brand-primary-200: rgba(var(--brand-primary-rgb), 0.2);
   --brand-primary-300: rgba(var(--brand-primary-rgb), 0.3);
 }
 
-/* Base background and text colors */
-body {
-  background-color: var(--brand-background);
-  color: var(--brand-text);
-  transition: background-color 0.3s ease, color 0.3s ease;
+/* Dark mode overrides via next-themes */
+.dark {
+  /* Higher opacity for dark mode primary color variations */
+  --brand-primary-50: rgba(var(--brand-primary-rgb), 0.1);
+  --brand-primary-100: rgba(var(--brand-primary-rgb), 0.15);
+  --brand-primary-200: rgba(var(--brand-primary-rgb), 0.25);
+  --brand-primary-300: rgba(var(--brand-primary-rgb), 0.35);
 }
 
 /* Utility classes for branded components */
@@ -124,14 +98,7 @@ body {
   color: var(--brand-accent);
 }
 
-.bg-brand-background {
-  background-color: var(--brand-background);
-}
-
-.bg-brand-card {
-  background-color: var(--brand-card);
-}
-
+/* Additional utility classes for gradients and patterns */
 .bg-brand-surface {
   background: linear-gradient(135deg, var(--brand-primary-50) 0%, var(--brand-primary-100) 100%);
 }
@@ -141,53 +108,7 @@ body {
   background-size: 24px 24px;
 }
 
-.text-brand-primary {
-  color: var(--brand-primary);
-}
-
-.text-brand-accent {
-  color: var(--brand-accent);
-}
-
-.text-brand-text {
-  color: var(--brand-text);
-}
-
-.border-brand-primary {
-  border-color: var(--brand-primary);
-}
-
-.border-brand-text {
-  border-color: var(--brand-text);
-}
-
-.border-brand-text-20 {
-  border-color: rgba(from var(--brand-text) r g b / 0.2);
-}
-
-.border-brand-text-10 {
-  border-color: rgba(from var(--brand-text) r g b / 0.1);
-}
-
-/* For browsers that don't support 'from' syntax, fallback */
-@supports not (color: rgba(from white r g b / 0.5)) {
-  body.dark .border-brand-text-20 {
-    border-color: rgba(248, 250, 252, 0.2);
-  }
-  
-  body.light .border-brand-text-20 {
-    border-color: rgba(15, 23, 42, 0.2);
-  }
-  
-  body.dark .border-brand-text-10 {
-    border-color: rgba(248, 250, 252, 0.1);
-  }
-  
-  body.light .border-brand-text-10 {
-    border-color: rgba(15, 23, 42, 0.1);
-  }
-}
-
+/* Focus and interaction styles */
 .ring-brand-primary {
   --tw-ring-color: var(--brand-primary);
 }

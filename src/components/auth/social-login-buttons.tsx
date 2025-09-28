@@ -12,16 +12,21 @@ interface SocialLoginButtonsProps {
 
 const SocialLoginButtons: React.FC<SocialLoginButtonsProps> = ({ disabled = false }) => {
 
+    const [isLoading, setIsLoading] = useState(false);
     const searchParams = useSearchParams();
     const from = searchParams.get("from");
-    const [isLoading, setIsLoading] = useState(false);
+    
+    // Create full URL for callback if we have a 'from' parameter
+    const callbackURL = from 
+        ? `${process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')}/${from}`
+        : "/";
 
     const handleSocialSignIn = async (provider: "google" | "github") => {
         try {
             setIsLoading(true);
             const { error } = await authClient.signIn.social({
                 provider,
-                callbackURL: from ?? "/"
+                callbackURL
             });
             if (error) {
                 toast.error(error.message || "Social login failed. Please try again.");

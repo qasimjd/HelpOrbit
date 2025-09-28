@@ -19,10 +19,10 @@ import { passwordSchema } from "@/schemas";
 
 
 export const auth = betterAuth({
-    secret: process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET,
-    basePath: "/api/auth",
-    baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
-    trustedOrigins: [process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"],
+    trustedOrigins: [
+        process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+        "http://localhost:3000/org"
+    ],
     emailAndPassword: {
         enabled: true,
         sendResetPassword: async ({ user, url }) => {

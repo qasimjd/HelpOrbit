@@ -191,11 +191,11 @@ async function seed() {
       },
       {
         id: 'org-5',
-        name: 'Qasim Javed Organization',
-        slug: 'qasim-javed',
-        logo: 'https://avatar.vercel.sh/qasim-javed',
+        name: 'JD Organization',
+        slug: 'jd-organization',
+        logo: 'https://avatar.vercel.sh/jd-organization',
         metadata: JSON.stringify({
-          domain: 'qasimjaved.com',
+          domain: 'jdorganization.com',
           primaryColor: '#16a34a',
           isPublic: true,
           industry: 'Technology',

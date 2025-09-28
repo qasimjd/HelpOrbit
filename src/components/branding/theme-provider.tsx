@@ -8,6 +8,9 @@ interface ThemeContextValue {
   branding: OrganizationBranding
   setOrganization: (org: Organization | null) => void
   updateBranding: (branding: Partial<OrganizationBranding>) => void
+  // Manual theme management
+  theme: 'light' | 'dark'
+  setTheme: (theme: 'light' | 'dark') => void
 }
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined)
@@ -17,9 +20,62 @@ interface ThemeProviderProps {
   initialOrganization?: Organization | null
 }
 
-export function ThemeProvider({ children, initialOrganization = null }: ThemeProviderProps) {
+// Main component that handles organization branding with manual theme management
+function BrandingProvider({ children, initialOrganization = null }: ThemeProviderProps) {
+  // Initialize theme from localStorage
+  const getInitialTheme = (): 'light' | 'dark' => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('helporbit-theme-mode')
+      return (saved as 'light' | 'dark') || 'light'
+    }
+    return 'light'
+  }
+  
+  const [theme, setManualTheme] = useState<'light' | 'dark'>(getInitialTheme)
+  
+  const setTheme = (newTheme: 'light' | 'dark') => {
+    setManualTheme(newTheme)
+    // Apply theme class immediately
+    if (newTheme === 'dark') {
+      document.documentElement.classList.add('dark')
+      document.documentElement.classList.remove('light')
+    } else {
+      document.documentElement.classList.add('light')
+      document.documentElement.classList.remove('dark')
+    }
+    // Save to localStorage for persistence
+    localStorage.setItem('helporbit-theme-mode', newTheme)
+  }
+  
+  // Apply theme class on mount
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark')
+      document.documentElement.classList.remove('light')
+    } else {
+      document.documentElement.classList.add('light')
+      document.documentElement.classList.remove('dark')
+    }
+  }, [theme])
+  // Initialize with saved branding if available
+  const getInitialBranding = (): OrganizationBranding => {
+    if (typeof window !== 'undefined') {
+      const savedPrimaryColor = localStorage.getItem('helporbit-primary-color')
+      const savedThemeMode = localStorage.getItem('helporbit-theme-mode')
+      
+      if (savedPrimaryColor) {
+        return {
+          primaryColor: savedPrimaryColor,
+          themeMode: (savedThemeMode as 'light' | 'dark' | 'auto') || 'light',
+          logoUrl: localStorage.getItem('helporbit-org-logo') || undefined,
+        }
+      }
+    }
+    return defaultBranding
+  }
+
   const [organization, setOrganization] = useState<Organization | null>(initialOrganization)
-  const [branding, setBranding] = useState<OrganizationBranding>(defaultBranding)
+  const [branding, setBranding] = useState<OrganizationBranding>(getInitialBranding)
   const [isClient, setIsClient] = useState(false)
 
   // Initialize client state and load persisted theme
@@ -97,56 +153,62 @@ export function ThemeProvider({ children, initialOrganization = null }: ThemePro
     }
   }, [organization])
 
-  // Apply CSS custom properties when branding changes
+  // Sync organization theme mode with our manual theme system
+  useEffect(() => {
+    if (branding.themeMode && branding.themeMode !== 'auto') {
+      setTheme(branding.themeMode as 'light' | 'dark')
+    }
+  }, [branding.themeMode, setTheme])
+
+  // Apply organization primary color when branding or theme changes
   useEffect(() => {
     const root = document.documentElement
-    const isDark = branding.themeMode === 'dark'
     
-    // Apply theme class to body
-    if (isDark) {
-      document.body.classList.add('dark')
-      document.body.classList.remove('light')
-    } else {
-      document.body.classList.add('light')
-      document.body.classList.remove('dark')
-    }
+    // Check if color is already correctly set (to avoid flash)
+    const currentPrimaryColor = getComputedStyle(root).getPropertyValue('--brand-primary').trim()
+    const targetPrimaryColor = branding.primaryColor
     
-    root.style.setProperty('--brand-primary', branding.primaryColor)
-    root.style.setProperty('--brand-text', isDark ? '#f8fafc' : '#0f172a')
-    root.style.setProperty('--brand-background', isDark ? '#0f172a' : '#ffffff')
-    root.style.setProperty('--brand-card', isDark ? '#1e293b' : '#f8fafc')
-
-    // Generate color variations for different UI states
-    const hexToRgb = (hex: string) => {
-      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-      return result ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16)
-      } : null
-    }
-
-    const rgb = hexToRgb(branding.primaryColor)
-    if (rgb) {
-      // Set RGB values for use in CSS custom properties
-      root.style.setProperty('--brand-primary-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`)
+    // Only apply changes if different from current values
+    if (currentPrimaryColor !== targetPrimaryColor) {
       
-      // Generate transparency variations (these will be used by light/dark mode CSS)
-      root.style.setProperty('--brand-primary-50', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${isDark ? 0.1 : 0.05})`)
-      root.style.setProperty('--brand-primary-100', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${isDark ? 0.15 : 0.1})`)
-      root.style.setProperty('--brand-primary-200', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${isDark ? 0.25 : 0.2})`)
-      root.style.setProperty('--brand-primary-300', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${isDark ? 0.35 : 0.3})`)
-      root.style.setProperty('--brand-primary-500', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.5)`)
-      root.style.setProperty('--brand-primary-700', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.7)`)
-      root.style.setProperty('--brand-primary-900', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.9)`)
-      
-      // Generate accent color (darker version of primary for better contrast)
-      const darkerR = Math.max(0, Math.floor(rgb.r * 0.8))
-      const darkerG = Math.max(0, Math.floor(rgb.g * 0.8))
-      const darkerB = Math.max(0, Math.floor(rgb.b * 0.8))
-      root.style.setProperty('--brand-accent', `rgb(${darkerR}, ${darkerG}, ${darkerB})`)
+      // Set the primary color - this is the only organization-specific color
+      root.style.setProperty('--brand-primary', branding.primaryColor)
+
+      // Generate color variations for different UI states
+      const hexToRgb = (hex: string) => {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+        return result ? {
+          r: parseInt(result[1], 16),
+          g: parseInt(result[2], 16),
+          b: parseInt(result[3], 16)
+        } : null
+      }
+
+      const rgb = hexToRgb(branding.primaryColor)
+      if (rgb) {
+        // Use next-themes to detect dark mode
+        const isDark = theme === 'dark'
+        
+        // Set RGB values for use in CSS custom properties
+        root.style.setProperty('--brand-primary-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`)
+        
+        // Generate transparency variations (these will be used by light/dark mode CSS)
+        root.style.setProperty('--brand-primary-50', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${isDark ? 0.1 : 0.05})`)
+        root.style.setProperty('--brand-primary-100', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${isDark ? 0.15 : 0.1})`)
+        root.style.setProperty('--brand-primary-200', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${isDark ? 0.25 : 0.2})`)
+        root.style.setProperty('--brand-primary-300', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${isDark ? 0.35 : 0.3})`)
+        root.style.setProperty('--brand-primary-500', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.5)`)
+        root.style.setProperty('--brand-primary-700', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.7)`)
+        root.style.setProperty('--brand-primary-900', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.9)`)
+        
+        // Generate accent color (darker version of primary for better contrast)
+        const darkerR = Math.max(0, Math.floor(rgb.r * 0.8))
+        const darkerG = Math.max(0, Math.floor(rgb.g * 0.8))
+        const darkerB = Math.max(0, Math.floor(rgb.b * 0.8))
+        root.style.setProperty('--brand-accent', `rgb(${darkerR}, ${darkerG}, ${darkerB})`)
+      }
     }
-  }, [branding])
+  }, [branding, theme])
 
   const updateBranding = (updates: Partial<OrganizationBranding>) => {
     setBranding(current => ({ ...current, ...updates }))
@@ -157,12 +219,23 @@ export function ThemeProvider({ children, initialOrganization = null }: ThemePro
     branding,
     setOrganization,
     updateBranding,
+    theme,
+    setTheme,
   }
 
   return (
     <ThemeContext.Provider value={contextValue}>
       {children}
     </ThemeContext.Provider>
+  )
+}
+
+// Main ThemeProvider with organization branding and manual theme management
+export function ThemeProvider({ children, initialOrganization = null }: ThemeProviderProps) {
+  return (
+    <BrandingProvider initialOrganization={initialOrganization}>
+      {children}
+    </BrandingProvider>
   )
 }
 

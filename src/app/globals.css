@@ -150,27 +150,3 @@ html {
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
 }
-
-@keyframes auroraFloat {
-
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-
-  50% {
-    transform: translate(40px, -40px) scale(1.05);
-  }
-}
-
-.animate-aurora-slow {
-  animation: auroraFloat 18s ease-in-out infinite;
-}
-
-.animate-aurora-medium {
-  animation: auroraFloat 14s ease-in-out infinite;
-}
-
-.animate-aurora-fast {
-  animation: auroraFloat 10s ease-in-out infinite;
-}

@@ -3,7 +3,7 @@
 import React from "react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
-import { useTheme } from "./theme-provider"
+import { useTheme } from "@/components/branding/theme-provider"
 
 interface BrandedLogoProps {
   size?: "sm" | "md" | "lg" | "xl"
@@ -79,14 +79,13 @@ export function BrandedLogo({
         showFallback && (
           <div
             className={cn(
-              "flex items-center justify-center rounded-lg text-white font-semibold bg-brand-primary shadow-sm",
+              "flex items-center justify-center rounded-lg text-foreground font-semibold bg-brand-primary shadow-sm",
               sizeClasses[size]
             )}
             style={{
               backgroundColor:
                 organization?.primaryColor ||
-                branding.primaryColor ||
-                "hsl(221.2 83.2% 53.3%)",
+                branding.primaryColor
             }}
           >
             {helpOrbit
@@ -129,11 +128,11 @@ export function BrandedTextLogo({
 
   return (
     <div className={cn("flex flex-col", className)}>
-      <h1 className={cn("font-bold text-gray-900", headingSizeClasses[size])}>
+      <h1 className={cn("font-bold", headingSizeClasses[size])}>
         {helpOrbit ? "HelpOrbit" : organization?.name || "HelpOrbit"}
       </h1>
       {showTagline && (
-        <p className={cn("mt-1 text-gray-600", taglineSizeClasses[size])}>
+        <p className={cn("mt-1 text-muted-foreground", taglineSizeClasses[size])}>
           {helpOrbit
             ? "Multi-tenant ticketing system"
             : organization

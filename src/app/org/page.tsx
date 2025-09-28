@@ -9,7 +9,6 @@ import { SwitchOrganizationButton } from '@/components/auth/switch-organization-
 import { EmailNotVerifiedAlert } from '@/components/auth/email-not-verified-alert'
 import { listUserOrganizationsAction } from '@/server/actions/organization-actions'
 import { MemberRole, OrganizationData } from '@/types/auth-organization'
-import { ArrowLeft } from 'lucide-react'
 import { LogoutButton } from '@/components/auth/logout-button'
 
 export const metadata: Metadata = {
@@ -55,7 +54,7 @@ export default async function OrgPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-5xl mx-auto flex flex-col items-center space-y-8 py-12">
         <BrandedLogo size="lg" helpOrbit />
 

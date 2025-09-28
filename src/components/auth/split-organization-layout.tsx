@@ -17,6 +17,7 @@ export function SplitOrganizationLayout({ children, className }: SplitOrganizati
         title="Modern Support Made Simple"
         description="HelpOrbit transforms how organizations manage customer support with intelligent ticketing, seamless collaboration, and powerful insights."
         logoSize="xl"
+        organizationSelect
       />
 
       {/* Right Panel - Organization Selection */}

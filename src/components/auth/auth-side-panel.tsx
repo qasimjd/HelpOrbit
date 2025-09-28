@@ -11,6 +11,7 @@ interface AuthSidePanelProps {
   showFeatures?: boolean
   logoSize?: "sm" | "md" | "lg" | "xl"
   className?: string
+  organizationSelect?: boolean
 }
 
 export function AuthSidePanel({
@@ -19,7 +20,8 @@ export function AuthSidePanel({
   showSwitchOrganization = false,
   showFeatures = false,
   logoSize = "lg",
-  className = ""
+  className = "",
+  organizationSelect = false
 }: AuthSidePanelProps) {
 
   return (
@@ -31,21 +33,22 @@ export function AuthSidePanel({
             size={logoSize}
             orientation="vertical"
             showTagline
+            helpOrbit={organizationSelect ? true : false}
             className="items-start"
           />
         </div>
 
         {/* Optional Title and Description */}
         {(title || description) && (
-          <div className="space-y-8 text-brand-text">
+          <div className="space-y-8">
             <div>
               {title && (
-                <h2 className="text-2xl font-bold mb-6 text-brand-text">
+                <h2 className="text-2xl font-bold mb-6">
                   {title}
                 </h2>
               )}
               {description && (
-                <p className="text-lg leading-relaxed opacity-80 text-brand-text">
+                <p className="text-lg leading-relaxed opacity-80">
                   {description}
                 </p>
               )}
@@ -57,15 +60,15 @@ export function AuthSidePanel({
         {showFeatures && (
           <div className="space-y-4 text-foreground mt-8">
             <div className="flex items-start space-x-3">
-              <div className="w-2 h-2 rounded-full mt-2 flex-shrink-0 bg-brand-primary" />
+              <div className="w-2 h-2 rounded-full mt-2 flex-shrink-0 bg-primary" />
               <p className="opacity-80">Streamlined ticket management and resolution</p>
             </div>
             <div className="flex items-start space-x-3">
-              <div className="w-2 h-2 rounded-full mt-2 flex-shrink-0 bg-brand-primary" />
+              <div className="w-2 h-2 rounded-full mt-2 flex-shrink-0 bg-primary" />
               <p className="opacity-80">Real-time collaboration with your support team</p>
             </div>
             <div className="flex items-start space-x-3">
-              <div className="w-2 h-2 rounded-full mt-2 flex-shrink-0 bg-brand-primary" />
+              <div className="w-2 h-2 rounded-full mt-2 flex-shrink-0 bg-primary" />
               <p className="opacity-80">Comprehensive reporting and analytics</p>
             </div>
           </div>
