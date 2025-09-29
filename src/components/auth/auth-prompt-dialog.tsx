@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { useRouter } from 'next/navigation'
-import { UserPlus, LogIn, Building } from 'lucide-react'
+import { UserPlus, LogIn } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -117,7 +117,7 @@ export function AuthPromptDialog({
                 Create Account
               </CardTitle>
               <CardDescription>
-                I'm new to HelpOrbit
+                I&apos;m new to HelpOrbit
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-0">

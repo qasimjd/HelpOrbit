@@ -51,7 +51,7 @@ export function TicketExample() {
   }
 
   const handleStatusChange = async (ticketId: string, status: string) => {
-    await updateTicket(ticketId, { status: status as any })
+    await updateTicket(ticketId, { status: status as 'open' | 'in_progress' | 'resolved' | 'closed' })
   }
 
   return (

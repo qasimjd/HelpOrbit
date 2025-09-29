@@ -1,5 +1,4 @@
 import { OrganizationSettings } from "@/components/auth/organization-settings";
-import { useActiveOrganization } from "@/lib/auth-client";
 
 export default function OrganizationSettingsPage({
   params,
@@ -12,7 +11,7 @@ export default function OrganizationSettingsPage({
     id: "demo-org-id",
     name: "Demo Organization",
     slug: params.slug,
-    logo: undefined,
+    logo: "",
     createdAt: new Date(),
     updatedAt: new Date(),
     metadata: {

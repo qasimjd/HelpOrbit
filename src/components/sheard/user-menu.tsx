@@ -1,8 +1,7 @@
 import React from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { LogoutButton } from '@/components/auth/logout-button'
-import { USER_MENU_ITEMS, buildHref } from '@/lib/navigation-constants'
-import Link from 'next/link'
+import { USER_MENU_ITEMS } from '@/lib/navigation-constants'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -10,14 +9,14 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { useCurrentOrganization, useUser } from '@/contexts/user-context'
+import { useUser } from '@/contexts/user-context'
 import { Button } from '@/components/ui/button'
 import { getInitials } from '@/lib/utils'
 
 
 const UserMenu = () => {
 
-    const { user, currentOrganization, isLoading } = useUser()
+    const { user } = useUser()
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>

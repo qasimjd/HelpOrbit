@@ -5,12 +5,11 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { 
   TicketIcon, 
-  ClockIcon, 
   CheckCircleIcon, 
   AlertCircleIcon,
   TrendingUpIcon,
-  UsersIcon,
-  PlusIcon
+  PlusIcon,
+  ClockIcon
 } from 'lucide-react'
 import Link from 'next/link'
 import { getDashboardData } from '@/server/actions/dashboard-actions'
@@ -64,7 +63,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>
           <p className="mt-1 text-muted-foreground">
-            Welcome back! Here's what's happening with your support tickets.
+            Welcome back! Here&apos;s what&apos;s happening with your support tickets.
           </p>
         </div>
         <Button asChild className="btn-brand-primary">

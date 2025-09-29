@@ -1,9 +1,10 @@
 "use server"
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { headers } from 'next/headers'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
-import type { LoginCredentials, ForgotPasswordRequest } from '@/types/auth'
+// Import types are removed as they are unused
 import {
   loginSchema,
   loginWithoutOrgSchema,
@@ -14,7 +15,7 @@ import {
 import { getOrganizationBySlug } from '@/server/db/queries'
 
 // Server action for login
-export async function loginAction(prevState: any, formData: FormData) {
+export async function loginAction(prevState: { success?: boolean; error?: string } | null, formData: FormData) {
   try {
     // Check if formData is actually a FormData object
     if (!formData || typeof formData.get !== 'function') {

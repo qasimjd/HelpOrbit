@@ -23,7 +23,7 @@ interface TicketDetailPageProps {
 }
 
 export async function generateMetadata({ params }: TicketDetailPageProps): Promise<Metadata> {
-  const { slug, ticketId } = await params
+  const { ticketId } = await params
 
   return {
     title: `Ticket #${ticketId} - HelpOrbit`,

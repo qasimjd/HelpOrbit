@@ -42,10 +42,16 @@ import { Loading } from "@/components/sheard/loading";
 
 type CreateOrganizationForm = CreateOrganizationData;
 
+interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 interface CreateOrganizationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess?: (organization: any) => void;
+  onSuccess?: (organization: Organization) => void;
 }
 
 export function CreateOrganizationDialog({
@@ -273,7 +279,7 @@ export function CreateOrganizationDialog({
                         />
                       </FormControl>
                       <FormDescription>
-                        URL to your organization's logo image. If left empty, a
+                        URL to your organization&apos;s logo image. If left empty, a
                         colorful logo with initials will be generated
                         automatically.
                       </FormDescription>

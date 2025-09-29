@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react'
 import type { 
   Ticket, 
   TicketWithDetails, 
@@ -38,7 +38,7 @@ export function TicketProvider({ children }: TicketProviderProps) {
   const currentOrganization = useCurrentOrganization()
 
   // Fetch tickets for the current organization
-  const fetchTickets = async (filters?: TicketFilters) => {
+  const fetchTickets = useCallback(async (filters?: TicketFilters) => {
     if (!currentOrganization) return
 
     try {
@@ -60,10 +60,10 @@ export function TicketProvider({ children }: TicketProviderProps) {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [currentOrganization])
 
   // Fetch ticket statistics
-  const fetchTicketStats = async () => {
+  const fetchTicketStats = useCallback(async () => {
     if (!currentOrganization) return
 
     try {
@@ -79,7 +79,7 @@ export function TicketProvider({ children }: TicketProviderProps) {
       console.error('Error fetching ticket stats:', error)
       // Don't set error state for stats, just log it
     }
-  }
+  }, [currentOrganization])
 
   // Fetch a specific ticket
   const fetchTicketById = async (ticketId: string): Promise<TicketWithDetails | null> => {
@@ -282,14 +282,14 @@ export function TicketProvider({ children }: TicketProviderProps) {
   }
 
   // Refresh all data
-  const refreshData = async (filters?: TicketFilters) => {
+  const refreshData = useCallback(async (filters?: TicketFilters) => {
     if (!currentOrganization) return
 
     await Promise.all([
       fetchTickets(filters),
       fetchTicketStats()
     ])
-  }
+  }, [currentOrganization, fetchTickets, fetchTicketStats])
 
   // Load initial data when organization changes
   useEffect(() => {
@@ -302,7 +302,7 @@ export function TicketProvider({ children }: TicketProviderProps) {
       setCurrentTicket(null)
       setError(null)
     }
-  }, [currentOrganization?.id])
+  }, [currentOrganization, refreshData])
 
   const contextValue: TicketContextValue = {
     // State

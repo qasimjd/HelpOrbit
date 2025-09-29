@@ -1,5 +1,6 @@
 "use server";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { headers } from "next/headers";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
@@ -14,8 +15,7 @@ import type {
 } from "@/types/auth-organization";
 import { 
   createOrganizationSchema,
-  updateOrganizationSchema,
-  checkOrganizationSlugSchema
+  updateOrganizationSchema
 } from "@/schemas/organization";
 import { getOrganizationBySlug, getOrganizations, getUserOrganizations } from "@/server/db/queries";
 
@@ -250,7 +250,7 @@ export async function getFullOrganizationAction(
 ): Promise<ActionResponse<FullOrganization>> {
   try {
     // Ensure user is authenticated
-    const session = await requireServerSession();
+    await requireServerSession();
     
     const result = await auth.api.getFullOrganization({
       query: organizationId ? { organizationId } : {},
@@ -294,7 +294,7 @@ export async function setActiveOrganizationAction(
 ): Promise<ActionResponse<void>> {
   try {
     // Ensure user is authenticated
-    const session = await requireServerSession();
+    await requireServerSession();
     
     await auth.api.setActiveOrganization({
       body: { organizationId },

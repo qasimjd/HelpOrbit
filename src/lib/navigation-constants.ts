@@ -5,8 +5,7 @@ import {
   SettingsIcon,
   PlusIcon,
   UserIcon,
-  BellIcon,
-  LogOutIcon
+  BellIcon
 } from 'lucide-react'
 import { LucideIcon } from 'lucide-react'
 
@@ -119,8 +118,7 @@ export const isNavigationActive = (
 
 // Role-based navigation filtering
 export const filterNavigationByRole = (
-  items: NavigationItem[],
-  userRole: string
+  items: NavigationItem[]
 ): NavigationItem[] => {
   // Add role-based filtering logic here if needed
   // For now, return all items

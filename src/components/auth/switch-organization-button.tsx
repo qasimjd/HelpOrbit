@@ -19,7 +19,6 @@ export function SwitchOrganizationButton({
   className,
   children = "Switch organization",
   href = "/select-organization",
-  asChild = false,
   variant = "link",
   clearSession = false, // default false
 }: SwitchOrganizationButtonProps) {

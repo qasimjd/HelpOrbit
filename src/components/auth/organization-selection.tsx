@@ -1,6 +1,4 @@
 import React, { useMemo } from "react"
-import { Plus } from "lucide-react"
-import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { cn, getInitials, getRoleColor } from "@/lib/utils"

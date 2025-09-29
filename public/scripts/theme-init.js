@@ -39,7 +39,7 @@
     }
     
     // Note: next-themes will handle the theme class application
-  } catch (e) {
+  } catch {
     // Silently fail if localStorage is not available
   }
 })();

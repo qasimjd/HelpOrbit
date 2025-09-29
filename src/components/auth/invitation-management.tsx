@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -134,6 +134,7 @@ function InviteMemberDialog({ open, onOpenChange, organizationId, onSuccess }: I
           message: result.error || "Failed to send invitation",
         });
       }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       form.setError("root", {
         message: "An unexpected error occurred",
@@ -237,14 +238,14 @@ export function InvitationManagement({
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
-  const loadInvitations = async () => {
+  const loadInvitations = useCallback(async () => {
     setLoading(true);
     try {
       const result = await listInvitationsAction(organizationId);
       if (result.success && result.data) {
         setInvitations(result.data.invitations);
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to load invitations",
@@ -253,11 +254,11 @@ export function InvitationManagement({
     } finally {
       setLoading(false);
     }
-  };
+  }, [organizationId, toast]);
 
   useEffect(() => {
     loadInvitations();
-  }, [organizationId]);
+  }, [loadInvitations]);
 
   const canManageInvitations = currentUserRole === "owner" || currentUserRole === "admin";
 
@@ -278,7 +279,7 @@ export function InvitationManagement({
           variant: "destructive",
         });
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to cancel invitation",
@@ -306,7 +307,7 @@ export function InvitationManagement({
           variant: "destructive",
         });
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to resend invitation",

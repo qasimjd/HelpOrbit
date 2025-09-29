@@ -1,11 +1,7 @@
 import { MemberManagement } from "@/components/auth/member-management";
 import { InvitationManagement } from "@/components/auth/invitation-management";
 
-export default function MembersPage({
-  params,
-}: {
-  params: { slug: string };
-}) {
+export default function MembersPage() {
   const organizationId = "demo-org-id"; // In real app, fetch from params.slug
   const currentUserRole = "owner"; // In real app, get from auth context
 

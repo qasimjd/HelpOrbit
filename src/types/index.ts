@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // Re-export all types from their respective modules
 export * from './user'
 export * from './ticket'

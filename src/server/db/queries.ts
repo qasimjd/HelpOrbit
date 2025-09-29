@@ -8,7 +8,8 @@ import {
   ticketComment,
   ticketAttachment
 } from './schema';
-import { eq, and, desc, asc, count, or } from 'drizzle-orm';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { and, desc, eq, or, count, asc } from "drizzle-orm"
 import { parseTags, stringifyTags } from '@/lib/ticket-utils';
 
 // Organization queries

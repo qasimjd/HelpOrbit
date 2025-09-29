@@ -4,7 +4,6 @@ import { headers } from "next/headers";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import type {
-  InviteMemberInput,
   UpdateMemberRoleInput,
   RemoveMemberInput,
   ActionResponse,
@@ -13,7 +12,6 @@ import type {
   MemberRole,
 } from "@/types/auth-organization";
 import {
-  inviteMemberSchema,
   updateMemberRoleSchema,
   removeMemberSchema,
   listMembersSchema,

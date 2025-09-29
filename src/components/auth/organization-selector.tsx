@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState } from "react";
 import { Check, ChevronsUpDown, Plus, Building } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -36,11 +35,10 @@ interface ExtendedOrganization extends OrganizationData {
 }
 
 export function OrganizationSelector({ onCreateNew, className }: OrganizationSelectorProps) {
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [switching, setSwitching] = useState(false);
   
-  const { data: organizations, isPending } = useListOrganizations();
+  const { data: organizations } = useListOrganizations();
   const { data: activeOrganization } = useActiveOrganization();
 
   const handleOrganizationSwitch = async (organizationId: string) => {

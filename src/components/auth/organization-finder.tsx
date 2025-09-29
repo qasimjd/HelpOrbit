@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Search, ArrowRight, Plus } from 'lucide-react'
@@ -177,7 +177,7 @@ export function OrganizationFinder({ onOrganizationSelect, className }: Organiza
                   No organizations found
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Can't find your organization? Try entering the exact organization code.
+                  Can&apos;t find your organization? Try entering the exact organization code.
                 </p>
               </div>
             </div>

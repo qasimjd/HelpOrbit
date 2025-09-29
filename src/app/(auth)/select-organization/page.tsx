@@ -39,7 +39,7 @@ export default function SelectOrganizationPage() {
       {/* Footer Links */}
       <div className="text-center mt-6 space-y-2 text-sm text-muted-foreground">
         <p>
-          Don't see your organization? Contact your administrator for access.
+          Don&apos;t see your organization? Contact your administrator for access.
         </p>
         <div className="flex justify-center space-x-6">
           <Button variant="link" className="p-0 text-muted-foreground text-xs">

@@ -94,7 +94,7 @@ export function OrganizationSettings({
       name: organization.name,
       slug: organization.slug,
       logo: organization.logo || "",
-      description: (organization.metadata as any)?.description || "",
+      description: (organization.metadata as { description?: string })?.description || "",
     },
   });
 
@@ -142,6 +142,7 @@ export function OrganizationSettings({
           message: result.error || "Failed to update organization",
         });
       }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       form.setError("root", {
         message: "An unexpected error occurred",
@@ -170,7 +171,7 @@ export function OrganizationSettings({
           variant: "destructive",
         });
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to delete organization",
@@ -209,7 +210,7 @@ export function OrganizationSettings({
               Organization Settings
             </CardTitle>
             <CardDescription>
-              Manage your organization's basic information and settings.
+              Manage your organization&apos;s basic information and settings.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -299,7 +300,7 @@ export function OrganizationSettings({
                         />
                       </FormControl>
                       <FormDescription>
-                        URL to your organization's logo image
+                        URL to your organization&apos;s logo image
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

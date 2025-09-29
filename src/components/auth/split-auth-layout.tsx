@@ -1,7 +1,6 @@
 "use client"
 
 import React from 'react'
-import { ArrowLeft } from 'lucide-react'
 import { LogoWithText } from '@/components/branding/branded-logo'
 import { AuthSidePanel } from '@/components/auth/auth-side-panel'
 import { SwitchOrganizationButton } from '@/components/auth/switch-organization-button'

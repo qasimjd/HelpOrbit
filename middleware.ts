@@ -21,12 +21,12 @@ export async function middleware(request: NextRequest) {
     const isGeneralProtectedRoute = pathname.startsWith('/organizations');
     const isProtectedRoute = isOrganizationProtectedRoute || isGeneralProtectedRoute;
     
-    const isPublicRoute = pathname === '/' ||
-                         pathname.startsWith('/api/') ||
-                         pathname.startsWith('/_next') ||
-                         pathname.startsWith('/favicon.ico') ||
-                         pathname.includes('.') ||
-                         pathname.match(/^\/org\/[^\/]+$/); // Allow org landing pages
+    // const isPublicRoute = pathname === '/' ||
+    //                      pathname.startsWith('/api/') ||
+    //                      pathname.startsWith('/_next') ||
+    //                      pathname.startsWith('/favicon.ico') ||
+    //                      pathname.includes('.') ||
+    //                      pathname.match(/^\/org\/[^\/]+$/); // Allow org landing pages
     
     // Skip middleware for API routes and static files
     if (pathname.startsWith('/api/') || 

@@ -7,26 +7,19 @@ import {
   ChevronUpIcon,
   MailIcon,
   BarChart3Icon,
-  FileTextIcon,
-  BuildingIcon,
-  ChevronDownIcon,
-  UsersIcon,
-  SettingsIcon
+  BuildingIcon
 } from 'lucide-react'
 import { BrandedLogo } from '@/components/branding/branded-logo'
 import { useTheme } from '@/components/branding/theme-provider'
-import { Button } from '@/components/ui/button'
 import { SwitchOrganizationButton } from '@/components/auth/switch-organization-button'
 import { LogoutButton } from '@/components/auth/logout-button'
 import { Separator } from '@/components/ui/separator'
 import { useUser, useOrganizationPermissions } from '@/contexts/user-context'
 import { 
   MAIN_NAVIGATION, 
-  SETTINGS_NAVIGATION, 
   QUICK_ACTIONS,
   buildHref,
-  isNavigationActive,
-  filterNavigationByRole
+  isNavigationActive
 } from '@/lib/navigation-constants'
 import { 
   Sidebar,
@@ -48,7 +41,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
 interface DashboardSidebarProps {
@@ -78,11 +70,10 @@ const organizationMenu = [
 ]
 
 export function DashboardSidebar({ organizationSlug }: DashboardSidebarProps) {
-  var orgSlug = organizationSlug
   const pathname = usePathname()
-  const { organization, branding } = useTheme()
+  const { organization } = useTheme()
   const { state } = useSidebar()
-  const { user, currentOrganization, isLoading } = useUser()
+  const { user } = useUser()
   const permissions = useOrganizationPermissions()
 
   const isCollapsed = state === "collapsed"

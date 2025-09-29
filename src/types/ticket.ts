@@ -51,7 +51,8 @@ export interface TicketAttachment {
   user?: User
 }
 
-export type TicketStatus = 'open' | 'in_progress' | 'waiting_for_customer' | 'resolved' | 'closed'
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed'
 export type TicketPriority = 'low' | 'medium' | 'high' | 'urgent'
 
 export interface CreateTicketData {

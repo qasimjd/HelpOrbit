@@ -6,10 +6,9 @@ import { AuthSidePanel } from '@/components/auth/auth-side-panel'
 
 interface SplitOrganizationLayoutProps {
   children: React.ReactNode
-  className?: string
 }
 
-export function SplitOrganizationLayout({ children, className }: SplitOrganizationLayoutProps) {
+export function SplitOrganizationLayout({ children }: SplitOrganizationLayoutProps) {
   return (
     <div className="max-h-screen min-h-screen flex">
       {/* Left Panel - HelpOrbit Branding */}

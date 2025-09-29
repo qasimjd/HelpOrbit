@@ -14,9 +14,9 @@ import {
   SETTINGS_NAVIGATION, 
   QUICK_ACTIONS,
   buildHref,
-  isNavigationActive,
-  filterNavigationByRole
+  isNavigationActive
 } from '@/lib/navigation-constants'
+import { Loading } from '@/components/sheard/loading'
 
 interface SidebarProps {
   organizationSlug: string
@@ -36,26 +36,24 @@ export function Sidebar({ organizationSlug, className }: SidebarProps) {
     return true
   })
 
-  const filteredSettingsNavigation = SETTINGS_NAVIGATION.filter(item => {
+  const filteredSettingsNavigation = SETTINGS_NAVIGATION.filter(() => {
     return permissions.canManageSettings
   })
 
   if (isLoading) {
     return (
       <div className={cn(
-        "flex h-full w-64 flex-col border-r border-gray-200 bg-white",
+        "flex h-full w-64 flex-col border-r",
         className
       )}>
-        <div className="flex items-center justify-center h-16 border-b border-gray-200">
-          <div className="animate-pulse text-gray-400">Loading...</div>
-        </div>
+        <Loading />
       </div>
     )
   }
 
   return (
     <div className={cn(
-      "flex h-full w-64 flex-col border-r border-gray-200 bg-white",
+      "flex h-full w-64 flex-col border-r border-gray-200 bg-background",
       className
     )}>
       {/* Logo and Organization */}

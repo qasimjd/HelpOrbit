@@ -49,7 +49,7 @@ export default async function LoginPage({ params }: LoginPageProps) {
         headers: await headers()
       })
 
-      const hasAccess = userOrgs?.some((org: any) => org.slug === slug)
+      const hasAccess = userOrgs?.some((org: { slug: string }) => org.slug === slug)
       
       if (hasAccess) {
         // User has access, redirect to dashboard

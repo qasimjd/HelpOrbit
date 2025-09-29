@@ -26,7 +26,7 @@ interface HeaderProps {
 
 export function Header({ organizationSlug, organizationName, className }: HeaderProps) {
   const [showSearch, setShowSearch] = useState(false)
-  const { user, currentOrganization, isLoading } = useUser()
+  const { currentOrganization } = useUser()
 
 
   return (

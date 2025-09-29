@@ -42,7 +42,7 @@ export async function checkOrganizationAccess(organizationSlug: string) {
 
     console.log('User organizations:', userOrgs?.length || 0)
 
-    const hasAccess = userOrgs?.some((org: any) => 
+    const hasAccess = userOrgs?.some((org: { slug: string }) => 
       org.slug === organizationSlug
     )
 
@@ -52,7 +52,7 @@ export async function checkOrganizationAccess(organizationSlug: string) {
     }
 
     console.log('User has access to organization:', organizationSlug)
-    return { session, organization: userOrgs?.find((org: any) => org.slug === organizationSlug) }
+    return { session, organization: userOrgs?.find((org: { slug: string }) => org.slug === organizationSlug) }
   } catch (error) {
     console.error('Check organization access error:', error)
     throw error

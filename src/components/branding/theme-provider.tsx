@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { Organization, OrganizationBranding, defaultBranding } from '@/types/organization'
 
 interface ThemeContextValue {
@@ -33,7 +33,7 @@ function BrandingProvider({ children, initialOrganization = null }: ThemeProvide
   
   const [theme, setManualTheme] = useState<'light' | 'dark'>(getInitialTheme)
   
-  const setTheme = (newTheme: 'light' | 'dark') => {
+  const setTheme = useCallback((newTheme: 'light' | 'dark') => {
     setManualTheme(newTheme)
     // Apply theme class immediately
     if (newTheme === 'dark') {
@@ -45,7 +45,7 @@ function BrandingProvider({ children, initialOrganization = null }: ThemeProvide
     }
     // Save to localStorage for persistence
     localStorage.setItem('helporbit-theme-mode', newTheme)
-  }
+  }, [])
   
   // Apply theme class on mount
   useEffect(() => {

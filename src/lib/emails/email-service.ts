@@ -33,8 +33,7 @@ interface SendOrganizationInvitationProps {
 export async function sendEmailVerification({
   to,
   userName,
-  verificationUrl,
-  callbackUrl
+  verificationUrl
 }: SendEmailVerificationProps) {
   // Use the verification URL as-is since auth configuration handles the redirect
   const emailHtml = await render(
@@ -61,8 +60,7 @@ export async function sendEmailVerification({
 export async function sendPasswordReset({
   to,
   userName,
-  resetUrl,
-  callbackUrl
+  resetUrl
 }: SendPasswordResetProps) {
   // Use the reset URL as-is since auth configuration handles the redirect
   const emailHtml = await render(
@@ -92,8 +90,7 @@ export async function sendOrganizationInvitation({
   inviterName,
   organizationName,
   role,
-  invitationUrl,
-  callbackUrl
+  invitationUrl
 }: SendOrganizationInvitationProps) {
   // Use the invitation URL as-is since auth configuration handles the redirect
   const emailHtml = await render(

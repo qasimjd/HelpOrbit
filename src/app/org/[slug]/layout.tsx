@@ -1,5 +1,5 @@
 import React from 'react'
-import { notFound, redirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { validateOrganizationAction } from '@/server/actions/auth-actions'
 
 interface OrganizationLayoutProps {

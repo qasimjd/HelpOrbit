@@ -12,11 +12,6 @@ import {
 
 const db = drizzle(process.env.DATABASE_URL!);
 
-// Generate unique IDs
-function generateId(): string {
-  return Math.random().toString(36).substr(2, 9);
-}
-
 async function seed() {
   console.log('🌱 Starting database seed...');
 

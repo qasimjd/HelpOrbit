@@ -237,7 +237,7 @@ export function LoginForm({
         </div>
       )}
       <p className="text-center">
-        <SwitchOrganizationButton children="Organization selection" />
+        <SwitchOrganizationButton>Organization selection</SwitchOrganizationButton>
       </p>
     </div>
   )

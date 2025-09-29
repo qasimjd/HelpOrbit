@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { emailSchema, idSchema, roleSchema } from "./common"
+import { emailSchema, idSchema } from "./common"
 
 // Invitation ID schema
 export const invitationIdSchema = z.object({

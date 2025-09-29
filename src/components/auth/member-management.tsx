@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { 
   Users, 
-  Mail, 
   MoreHorizontal, 
   UserPlus, 
   Shield, 
@@ -90,13 +89,13 @@ export function MemberManagement({
   const [memberToRemove, setMemberToRemove] = useState<MemberData | null>(null);
   const [updatingRole, setUpdatingRole] = useState<string | null>(null);
 
-  const loadMembers = async () => {
+  const loadMembers = useCallback(async () => {
     try {
       const result = await listMembersAction({ organizationId });
       if (result.success && result.data) {
         setMembers(result.data.members);
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to load members",
@@ -105,11 +104,11 @@ export function MemberManagement({
     } finally {
       setLoading(false);
     }
-  };
+  }, [organizationId, toast]);
 
   useEffect(() => {
     loadMembers();
-  }, [organizationId]);
+  }, [loadMembers]);
 
   const canManageMembers = currentUserRole === "owner" || currentUserRole === "admin";
   const canRemoveMembers = currentUserRole === "owner" || currentUserRole === "admin";
@@ -137,7 +136,7 @@ export function MemberManagement({
           variant: "destructive",
         });
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Error", 
         description: "Failed to remove member",
@@ -176,7 +175,7 @@ export function MemberManagement({
           variant: "destructive",
         });
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to update member role", 

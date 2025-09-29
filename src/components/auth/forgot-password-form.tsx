@@ -51,7 +51,7 @@ export function ForgotPasswordForm({ organizationSlug, className }: ForgotPasswo
           </Button>
           
           <p className="text-xs text-gray-500">
-            Didn't receive an email? Check your spam folder or{' '}
+            Didn&apos;t receive an email? Check your spam folder or{' '}
             <button 
               onClick={() => window.location.reload()}
               className="link-brand"
@@ -100,7 +100,7 @@ export function ForgotPasswordForm({ organizationSlug, className }: ForgotPasswo
             <p className="text-sm text-red-600">{state.errors.email[0]}</p>
           )}
           <p className="text-xs text-gray-500">
-            We'll send a password reset link to this email address.
+            We&apos;ll send a password reset link to this email address.
           </p>
         </div>
 

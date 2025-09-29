@@ -2,13 +2,13 @@
 
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Mail, Send, Loader2 } from 'lucide-react'
+import { Mail, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { sendVerificationEmailAction } from '@/server/actions/auth-actions'
 import { cn } from '@/lib/utils'
-import { Loading } from '../sheard/loading'
-import { Skeleton } from '../ui/skeleton'
+import { Loading } from '@/components/sheard/loading'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface EmailNotVerifiedAlertProps {
     userEmail: string
@@ -35,7 +35,7 @@ export function EmailNotVerifiedAlert({ userEmail, className }: EmailNotVerified
             } else {
                 setMessage(result.message)
             }
-        } catch (error) {
+        } catch {
             setMessage('Failed to send email. Try again.')
         } finally {
             setIsLoading(false)

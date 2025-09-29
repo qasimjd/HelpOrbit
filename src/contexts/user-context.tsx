@@ -1,7 +1,7 @@
 "use client"
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { authClient, useSession, useListOrganizations } from '@/lib/auth-client'
+import { useSession, useListOrganizations } from '@/lib/auth-client'
 import type { 
   User, 
   Organization, 
@@ -48,7 +48,7 @@ function UserProviderContent({ children, initialOrganizationSlug }: UserProvider
   // Update organizations when data changes
   useEffect(() => {
     if (!orgsPending && organizationsData) {
-      const orgsData: Organization[] = organizationsData.map((org: any) => ({
+      const orgsData: Organization[] = organizationsData.map((org: { id: string; name: string; slug: string; logo?: string; role: string; metadata?: unknown }) => ({
         id: org.id,
         name: org.name,
         slug: org.slug,
@@ -66,7 +66,7 @@ function UserProviderContent({ children, initialOrganizationSlug }: UserProvider
         } else if (orgsData.length > 0) {
           setCurrentOrgState(orgsData[0])
         }
-      } else if (orgsData.length > 0 && !currentOrganization) {
+      } else if (orgsData.length > 0) {
         setCurrentOrgState(orgsData[0])
       }
     } else if (!orgsPending && !organizationsData) {

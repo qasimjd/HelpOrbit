@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React from 'react'
 import { ThemeProvider } from '@/components/branding/theme-provider'
 import { UserProvider } from '@/contexts/user-context'
 import { TicketProvider } from '@/contexts/ticket-context'
@@ -11,7 +11,8 @@ import { DashboardSidebar } from './dashboard-sidebar'
 interface DashboardLayoutProps {
   children: React.ReactNode
   organizationSlug: string
-  organization: any // Organization type from server
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  organization: any // Complex type from server
 }
 
 function DashboardLayoutContent({ 

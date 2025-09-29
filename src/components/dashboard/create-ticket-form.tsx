@@ -297,7 +297,7 @@ export function CreateTicketForm({ organizationSlug, organizationId, className }
               )}
               
               <p className="text-xs text-gray-500">
-                Add relevant tags to help categorize your ticket (e.g., "login", "payment", "bug")
+                Add relevant tags to help categorize your ticket (e.g., &quot;login&quot;, &quot;payment&quot;, &quot;bug&quot;)
               </p>
             </div>
           </div>

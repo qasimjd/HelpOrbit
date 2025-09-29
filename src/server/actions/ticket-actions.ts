@@ -1,5 +1,6 @@
 'use server'
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { unstable_cache } from 'next/cache'
 import { 
@@ -11,7 +12,7 @@ import {
   deleteTicket
 } from '@/server/db/queries'
 import { requireServerSession } from '@/lib/session'
-import { generateTicketId, stringifyTags, parseTags } from '@/lib/ticket-utils'
+import { generateTicketId, parseTags } from '@/lib/ticket-utils'
 import type { 
   Ticket, 
   TicketWithDetails, 

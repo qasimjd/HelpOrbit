@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { unstable_cache } from 'next/cache'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -16,10 +15,7 @@ import {
 import {
   PlusIcon,
   SearchIcon,
-  FilterIcon,
-  ClockIcon,
-  UserIcon,
-  CalendarIcon
+  FilterIcon
 } from 'lucide-react'
 import { getOrganizationBySlug, getTicketsByOrganization } from '@/server/db/queries'
 import { notFound } from 'next/navigation'
