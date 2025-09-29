@@ -9,6 +9,7 @@ import {
   ticketAttachment
 } from './schema';
 import { eq, and, desc, asc, count, or } from 'drizzle-orm';
+import { parseTags, stringifyTags } from '@/lib/ticket-utils';
 
 // Organization queries
 export async function getOrganizations() {
@@ -73,10 +74,10 @@ export async function getTicketsByOrganization(organizationId: string) {
     .where(eq(ticket.organizationId, organizationId))
     .orderBy(desc(ticket.createdAt));
 
-  // Parse tags from JSON string to array
+  // Parse tags from JSON string or comma-separated string to array
   return results.map(ticket => ({
     ...ticket,
-    tags: ticket.tags ? JSON.parse(ticket.tags) : null
+    tags: parseTags(ticket.tags)
   }));
 }
 
@@ -115,10 +116,10 @@ export async function getTicketById(ticketId: string, organizationId: string) {
   const ticketData = result[0];
   if (!ticketData) return null;
 
-  // Parse tags from JSON string to array
+  // Parse tags from JSON string or comma-separated string to array
   return {
     ...ticketData,
-    tags: ticketData.tags ? JSON.parse(ticketData.tags) : null
+    tags: parseTags(ticketData.tags)
   };
 }
 
@@ -291,4 +292,81 @@ export async function getInvitations(organizationId: string) {
     .innerJoin(user, eq(member.userId, user.id))
     .where(eq(invitation.organizationId, organizationId))
     .orderBy(desc(invitation.createdAt));
+}
+
+// Ticket mutations
+export async function createTicket(ticketData: {
+  id: string
+  title: string
+  description: string
+  status: 'open' | 'in_progress' | 'waiting_for_customer' | 'resolved' | 'closed'
+  priority: 'low' | 'medium' | 'high' | 'urgent'
+  organizationId: string
+  requesterId: string
+  assigneeId?: string | null
+  tags?: string[] | null
+}) {
+  const result = await db
+    .insert(ticket)
+    .values({
+      id: ticketData.id,
+      title: ticketData.title,
+      description: ticketData.description,
+      status: ticketData.status,
+      priority: ticketData.priority,
+      organizationId: ticketData.organizationId,
+      requesterId: ticketData.requesterId,
+      assigneeId: ticketData.assigneeId || null,
+      tags: stringifyTags(ticketData.tags),
+    })
+    .returning()
+
+  return result[0]
+}
+
+export async function updateTicket(
+  ticketId: string, 
+  organizationId: string,
+  updates: {
+    title?: string
+    description?: string
+    status?: 'open' | 'in_progress' | 'waiting_for_customer' | 'resolved' | 'closed'
+    priority?: 'low' | 'medium' | 'high' | 'urgent'
+    assigneeId?: string | null
+    tags?: string[] | null
+    resolvedAt?: Date | null
+  }
+) {
+  const updateData: any = { updatedAt: new Date() }
+  
+  if (updates.title !== undefined) updateData.title = updates.title
+  if (updates.description !== undefined) updateData.description = updates.description
+  if (updates.status !== undefined) updateData.status = updates.status
+  if (updates.priority !== undefined) updateData.priority = updates.priority
+  if (updates.assigneeId !== undefined) updateData.assigneeId = updates.assigneeId
+  if (updates.tags !== undefined) updateData.tags = stringifyTags(updates.tags)
+  if (updates.resolvedAt !== undefined) updateData.resolvedAt = updates.resolvedAt
+
+  const result = await db
+    .update(ticket)
+    .set(updateData)
+    .where(and(
+      eq(ticket.id, ticketId),
+      eq(ticket.organizationId, organizationId)
+    ))
+    .returning()
+
+  return result[0] || null
+}
+
+export async function deleteTicket(ticketId: string, organizationId: string) {
+  const result = await db
+    .delete(ticket)
+    .where(and(
+      eq(ticket.id, ticketId),
+      eq(ticket.organizationId, organizationId)
+    ))
+    .returning()
+
+  return result.length > 0
 }

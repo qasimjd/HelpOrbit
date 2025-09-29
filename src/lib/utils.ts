@@ -77,3 +77,10 @@ export function generateSlug(input: string): string {
     .replace(/^-+|-+$/g, "") // trim leading/trailing hyphens
     .slice(0, 50); // enforce max length
 }
+
+export function generateId(): string {
+  // Generate a random ID using crypto API
+  const array = new Uint8Array(16)
+  crypto.getRandomValues(array)
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
+}

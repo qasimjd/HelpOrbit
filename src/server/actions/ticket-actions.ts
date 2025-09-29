@@ -1,12 +1,17 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
+import { unstable_cache } from 'next/cache'
 import { 
   getTicketsByOrganization, 
   getTicketStats, 
-  getTicketById
+  getTicketById,
+  createTicket,
+  updateTicket,
+  deleteTicket
 } from '@/server/db/queries'
 import { requireServerSession } from '@/lib/session'
+import { generateTicketId, stringifyTags, parseTags } from '@/lib/ticket-utils'
 import type { 
   Ticket, 
   TicketWithDetails, 
@@ -17,7 +22,7 @@ import type {
   ApiResponse
 } from '@/types'
 
-// Get tickets for an organization with optional filters
+// Get tickets for an organization with optional filters (with caching)
 export async function getTicketsAction(
   organizationId: string, 
   filters?: TicketFilters
@@ -33,7 +38,19 @@ export async function getTicketsAction(
       }
     }
 
-    const tickets = await getTicketsByOrganization(organizationId)
+    // Use cached function for tickets
+    const getCachedTickets = unstable_cache(
+      async () => {
+        return await getTicketsByOrganization(organizationId)
+      },
+      [`tickets-${organizationId}`],
+      {
+        tags: [`tickets-${organizationId}`],
+        revalidate: 300, // Cache for 5 minutes
+      }
+    )
+
+    const tickets = await getCachedTickets()
     
     // Apply filters
     let filteredTickets = tickets
@@ -86,7 +103,7 @@ export async function getTicketsAction(
   }
 }
 
-// Get ticket statistics for an organization
+// Get ticket statistics for an organization (with caching)
 export async function getTicketStatsAction(
   organizationId: string
 ): Promise<ApiResponse<TicketStats>> {
@@ -101,7 +118,19 @@ export async function getTicketStatsAction(
       }
     }
 
-    const stats = await getTicketStats(organizationId)
+    // Use cached function for stats
+    const getCachedStats = unstable_cache(
+      async () => {
+        return await getTicketStats(organizationId)
+      },
+      [`ticket-stats-${organizationId}`],
+      {
+        tags: [`ticket-stats-${organizationId}`],
+        revalidate: 300, // Cache for 5 minutes
+      }
+    )
+
+    const stats = await getCachedStats()
     
     return {
       success: true,
@@ -116,7 +145,7 @@ export async function getTicketStatsAction(
   }
 }
 
-// Get a single ticket by ID
+// Get a single ticket by ID (with caching)
 export async function getTicketByIdAction(
   ticketId: string,
   organizationId: string
@@ -132,7 +161,19 @@ export async function getTicketByIdAction(
       }
     }
 
-    const ticket = await getTicketById(ticketId, organizationId)
+    // Use cached function for individual ticket
+    const getCachedTicket = unstable_cache(
+      async () => {
+        return await getTicketById(ticketId, organizationId)
+      },
+      [`ticket-${ticketId}-${organizationId}`],
+      {
+        tags: [`ticket-${ticketId}`, `tickets-${organizationId}`],
+        revalidate: 60, // Cache for 1 minute
+      }
+    )
+
+    const ticket = await getCachedTicket()
     
     if (!ticket) {
       return {
@@ -170,6 +211,7 @@ export async function createTicketAction(
       }
     }
 
+    // Validate input data
     if (!ticketData.title?.trim()) {
       return {
         success: false,
@@ -177,37 +219,72 @@ export async function createTicketAction(
       }
     }
 
+    if (ticketData.title.trim().length < 3) {
+      return {
+        success: false,
+        error: 'Ticket title must be at least 3 characters'
+      }
+    }
+
+    if (!ticketData.description?.trim()) {
+      return {
+        success: false,
+        error: 'Ticket description is required'
+      }
+    }
+
+    if (ticketData.description.trim().length < 10) {
+      return {
+        success: false,
+        error: 'Ticket description must be at least 10 characters'
+      }
+    }
+
+    if (!ticketData.priority || !['low', 'medium', 'high', 'urgent'].includes(ticketData.priority)) {
+      return {
+        success: false,
+        error: 'Valid priority is required'
+      }
+    }
+
+    // Generate unique ticket ID
+    const ticketId = generateTicketId()
+
     // Create ticket data
     const newTicketData = {
+      id: ticketId,
       title: ticketData.title.trim(),
-      description: ticketData.description?.trim() || null,
+      description: ticketData.description.trim(),
       priority: ticketData.priority,
-      tags: ticketData.tags || null,
+      tags: ticketData.tags && ticketData.tags.length > 0 ? ticketData.tags : null,
       organizationId,
       requesterId: session.user.id,
       assigneeId: null, // Will be assigned later
-      status: 'open' as const,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      resolvedAt: null
+      status: 'open' as const
     }
 
-    // TODO: Implement actual database insertion
-    // const ticket = await dbCreateTicket(newTicketData)
-    
-    // For now, return mock data
-    const ticket: Ticket = {
-      id: `ticket_${Date.now()}`,
-      ...newTicketData
+    // Insert into database
+    const ticket = await createTicket(newTicketData)
+
+    if (!ticket) {
+      return {
+        success: false,
+        error: 'Failed to create ticket in database'
+      }
     }
 
-    // Revalidate relevant paths
+    // Revalidate cache tags and paths
+    revalidateTag(`tickets-${organizationId}`)
+    revalidateTag(`ticket-stats-${organizationId}`)
     revalidatePath(`/org/*/dashboard`)
     revalidatePath(`/org/*/dashboard/tickets`)
 
     return {
       success: true,
-      data: ticket,
+      data: {
+        ...ticket,
+        tags: parseTags(ticket.tags)
+      } as Ticket,
       message: 'Ticket created successfully'
     }
   } catch (error) {
@@ -244,33 +321,54 @@ export async function updateTicketAction(
       }
     }
 
-    // TODO: Implement actual database update
-    // const ticket = await dbUpdateTicket(ticketId, organizationId, updates)
-    
-    // For now, return mock data
-    const ticket: Ticket = {
-      id: ticketId,
-      title: updates.title || 'Updated Ticket',
-      description: updates.description || null,
-      status: updates.status || 'open',
-      priority: updates.priority || 'medium',
-      tags: updates.tags || null,
-      organizationId,
-      requesterId: null,
-      assigneeId: updates.assigneeId || null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      resolvedAt: updates.status === 'resolved' ? new Date() : null
+    if (updates.title && updates.title.trim().length < 3) {
+      return {
+        success: false,
+        error: 'Ticket title must be at least 3 characters'
+      }
     }
 
-    // Revalidate relevant paths
+    if (updates.description && updates.description.trim().length < 10) {
+      return {
+        success: false,
+        error: 'Ticket description must be at least 10 characters'
+      }
+    }
+
+    // Prepare update data
+    const updateData: any = {}
+    if (updates.title !== undefined) updateData.title = updates.title.trim()
+    if (updates.description !== undefined) updateData.description = updates.description.trim()
+    if (updates.status !== undefined) updateData.status = updates.status
+    if (updates.priority !== undefined) updateData.priority = updates.priority
+    if (updates.assigneeId !== undefined) updateData.assigneeId = updates.assigneeId
+    if (updates.tags !== undefined) updateData.tags = updates.tags
+    if (updates.status === 'resolved') updateData.resolvedAt = new Date()
+
+    // Update in database
+    const ticket = await updateTicket(ticketId, organizationId, updateData)
+
+    if (!ticket) {
+      return {
+        success: false,
+        error: 'Ticket not found or update failed'
+      }
+    }
+
+    // Revalidate cache tags and paths
+    revalidateTag(`ticket-${ticketId}`)
+    revalidateTag(`tickets-${organizationId}`)
+    revalidateTag(`ticket-stats-${organizationId}`)
     revalidatePath(`/org/*/dashboard`)
     revalidatePath(`/org/*/dashboard/tickets`)
     revalidatePath(`/org/*/dashboard/tickets/${ticketId}`)
 
     return {
       success: true,
-      data: ticket,
+      data: {
+        ...ticket,
+        tags: parseTags(ticket.tags)
+      } as Ticket,
       message: 'Ticket updated successfully'
     }
   } catch (error) {
@@ -298,11 +396,8 @@ export async function deleteTicketAction(
       }
     }
 
-    // TODO: Implement actual database deletion
-    // const result = await dbDeleteTicket(ticketId, organizationId)
-    
-    // For now, return success
-    const result = true
+    // Delete from database
+    const result = await deleteTicket(ticketId, organizationId)
 
     if (!result) {
       return {
@@ -311,7 +406,10 @@ export async function deleteTicketAction(
       }
     }
 
-    // Revalidate relevant paths
+    // Revalidate cache tags and paths
+    revalidateTag(`ticket-${ticketId}`)
+    revalidateTag(`tickets-${organizationId}`)
+    revalidateTag(`ticket-stats-${organizationId}`)
     revalidatePath(`/org/*/dashboard`)
     revalidatePath(`/org/*/dashboard/tickets`)
 

@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useActionState } from 'react'
+import React, { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,24 +16,74 @@ import {
 } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
-import { Loader2, AlertCircle, X } from 'lucide-react'
-import { createTicketAction } from '@/lib/ticket-actions'
+import { AlertCircle, X, CheckCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { createTicketAction } from '@/server/actions/ticket-actions'
+import type { CreateTicketData, TicketPriority } from '@/types/ticket'
+import { Loading } from '@/components/sheard/loading'
 
 interface CreateTicketFormProps {
   organizationSlug: string
+  organizationId: string
   className?: string
 }
 
-export function CreateTicketForm({ organizationSlug, className }: CreateTicketFormProps) {
-  const [tags, setTags] = React.useState<string[]>([])
-  const [tagInput, setTagInput] = React.useState('')
+interface FormErrors {
+  title?: string[]
+  description?: string[]
+  priority?: string[]
+  general?: string
+}
+
+export function CreateTicketForm({ organizationSlug, organizationId, className }: CreateTicketFormProps) {
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
   
-  const [state, formAction, isPending] = useActionState(createTicketAction, {
-    success: false,
-    errors: {},
-    message: ''
+  // Form state
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    priority: '' as TicketPriority | ''
   })
+  
+  // UI state
+  const [tags, setTags] = useState<string[]>([])
+  const [tagInput, setTagInput] = useState('')
+  const [errors, setErrors] = useState<FormErrors>({})
+  const [successMessage, setSuccessMessage] = useState('')
+
+  // Validation functions
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {}
+
+    if (!formData.title.trim()) {
+      newErrors.title = ['Title is required']
+    } else if (formData.title.trim().length < 3) {
+      newErrors.title = ['Title must be at least 3 characters']
+    }
+
+    if (!formData.description.trim()) {
+      newErrors.description = ['Description is required']
+    } else if (formData.description.trim().length < 10) {
+      newErrors.description = ['Description must be at least 10 characters']
+    }
+
+    if (!formData.priority) {
+      newErrors.priority = ['Priority is required']
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  // Form handlers
+  const handleInputChange = (field: keyof typeof formData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+    // Clear related error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: undefined }))
+    }
+  }
 
   const handleAddTag = (tag: string) => {
     const trimmedTag = tag.trim().toLowerCase()
@@ -55,22 +106,61 @@ export function CreateTicketForm({ organizationSlug, className }: CreateTicketFo
     }
   }
 
+  // Submit handler
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!validateForm()) {
+      return
+    }
+
+    const ticketData: CreateTicketData = {
+      title: formData.title.trim(),
+      description: formData.description.trim(),
+      priority: formData.priority as TicketPriority,
+      tags: tags.length > 0 ? tags : undefined
+    }
+
+    startTransition(async () => {
+      try {
+        const result = await createTicketAction(organizationId, ticketData)
+        
+        if (result.success) {
+          setSuccessMessage('Ticket created successfully!')
+          // Redirect to tickets page or the new ticket
+          setTimeout(() => {
+            router.push(`/org/${organizationSlug}/dashboard/tickets`)
+          }, 1500)
+        } else {
+          setErrors({ general: result.error || 'Failed to create ticket' })
+        }
+      } catch (error) {
+        console.error('Error creating ticket:', error)
+        setErrors({ general: 'An unexpected error occurred. Please try again.' })
+      }
+    })
+  }
+
   return (
     <Card className={cn("", className)}>
       <CardHeader>
         <CardTitle>Ticket Details</CardTitle>
       </CardHeader>
       <CardContent>
-        <form action={formAction} className="space-y-6">
-          {/* Hidden field for organization slug */}
-          <input type="hidden" name="organizationSlug" value={organizationSlug} />
-          <input type="hidden" name="tags" value={tags.join(',')} />
-          
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Success Message */}
+          {successMessage && (
+            <Alert>
+              <CheckCircle className="h-4 w-4" />
+              <AlertDescription>{successMessage}</AlertDescription>
+            </Alert>
+          )}
+
           {/* Error Message */}
-          {!state.success && state.message && (
+          {errors.general && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{state.message}</AlertDescription>
+              <AlertDescription>{errors.general}</AlertDescription>
             </Alert>
           )}
 
@@ -81,17 +171,18 @@ export function CreateTicketForm({ organizationSlug, className }: CreateTicketFo
             </Label>
             <Input
               id="title"
-              name="title"
+              value={formData.title}
+              onChange={(e) => handleInputChange('title', e.target.value)}
               placeholder="Brief description of the issue"
               className={cn(
                 "input-brand",
-                state.errors?.title && "border-red-500 focus:border-red-500"
+                errors?.title && "border-red-500 focus:border-red-500"
               )}
               disabled={isPending}
               required
             />
-            {state.errors?.title && (
-              <p className="text-sm text-red-600">{state.errors.title[0]}</p>
+            {errors?.title && (
+              <p className="text-sm text-red-600">{errors.title[0]}</p>
             )}
           </div>
 
@@ -100,8 +191,16 @@ export function CreateTicketForm({ organizationSlug, className }: CreateTicketFo
             <Label htmlFor="priority" className="text-sm font-medium text-gray-700">
               Priority *
             </Label>
-            <Select name="priority" disabled={isPending} required>
-              <SelectTrigger className="input-brand">
+            <Select 
+              value={formData.priority} 
+              onValueChange={(value) => handleInputChange('priority', value)}
+              disabled={isPending} 
+              required
+            >
+              <SelectTrigger className={cn(
+                "input-brand",
+                errors?.priority && "border-red-500 focus:border-red-500"
+              )}>
                 <SelectValue placeholder="Select priority level" />
               </SelectTrigger>
               <SelectContent>
@@ -131,8 +230,8 @@ export function CreateTicketForm({ organizationSlug, className }: CreateTicketFo
                 </SelectItem>
               </SelectContent>
             </Select>
-            {state.errors?.priority && (
-              <p className="text-sm text-red-600">{state.errors.priority[0]}</p>
+            {errors?.priority && (
+              <p className="text-sm text-red-600">{errors.priority[0]}</p>
             )}
           </div>
 
@@ -143,18 +242,19 @@ export function CreateTicketForm({ organizationSlug, className }: CreateTicketFo
             </Label>
             <Textarea
               id="description"
-              name="description"
+              value={formData.description}
+              onChange={(e) => handleInputChange('description', e.target.value)}
               placeholder="Provide detailed information about the issue, including steps to reproduce, error messages, and any relevant context..."
               rows={6}
               className={cn(
                 "input-brand resize-none",
-                state.errors?.description && "border-red-500 focus:border-red-500"
+                errors?.description && "border-red-500 focus:border-red-500"
               )}
               disabled={isPending}
               required
             />
-            {state.errors?.description && (
-              <p className="text-sm text-red-600">{state.errors.description[0]}</p>
+            {errors?.description && (
+              <p className="text-sm text-red-600">{errors.description[0]}</p>
             )}
             <p className="text-xs text-gray-500">
               Minimum 10 characters. Be as detailed as possible to help us resolve your issue faster.
@@ -219,7 +319,7 @@ export function CreateTicketForm({ organizationSlug, className }: CreateTicketFo
             >
               {isPending ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loading size='sm' />
                   Creating...
                 </>
               ) : (
