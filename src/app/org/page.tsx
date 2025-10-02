@@ -3,6 +3,9 @@ import { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 
 import { getServerSession } from '@/lib/session'
+
+// This page uses session/auth, so it should be dynamically rendered
+export const dynamic = 'force-dynamic'
 import { OrganizationSelection } from '@/components/auth/organization-selection'
 import { BrandedLogo } from '@/components/branding/branded-logo'
 import { SwitchOrganizationButton } from '@/components/auth/switch-organization-button'

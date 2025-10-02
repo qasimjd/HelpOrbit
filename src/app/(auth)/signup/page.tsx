@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { Suspense } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { SignUpForm } from '@/components/auth/signup-form'
 import { Metadata } from 'next'
 import { BrandedLogo } from '@/components/branding/branded-logo'
+import { Loading } from '@/components/sheard/loading'
 
 export const metadata: Metadata = {
     title: 'Sign Up | HelpOrbit',
@@ -25,7 +26,9 @@ const SignUpPage = () => {
                     </p>
                 </CardHeader>
                 <CardContent className='max-w-md w-full mx-auto'>
-                    <SignUpForm showModeSwitch={true} />
+                    <Suspense fallback={<Loading size="md" text="Loading signup form..." />}>
+                        <SignUpForm showModeSwitch={true} />
+                    </Suspense>
                 </CardContent>
             </Card>
         </div>

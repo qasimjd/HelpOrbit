@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Suspense } from 'react'
 import { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { validateOrganizationAction } from '@/server/actions/auth-actions'
@@ -6,6 +6,10 @@ import { getServerSession } from '@/lib/session'
 import { SplitAuthLayout } from '@/components/auth/split-auth-layout'
 import { LoginForm } from '@/components/auth/login-form'
 import { ThemeProvider } from '@/components/branding/theme-provider'
+import { Loading } from '@/components/sheard/loading'
+
+// This page uses session/auth and headers, so it should be dynamically rendered
+export const dynamic = 'force-dynamic'
 
 interface LoginPageProps {
   params: Promise<{ slug: string }>
@@ -67,7 +71,9 @@ export default async function LoginPage({ params }: LoginPageProps) {
   return (
     <ThemeProvider initialOrganization={organization}>
       <SplitAuthLayout>
-        <LoginForm organizationSlug={slug} />
+        <Suspense fallback={<Loading size="md" text="Loading login form..." />}>
+          <LoginForm organizationSlug={slug} />
+        </Suspense>
       </SplitAuthLayout>
     </ThemeProvider>
   )

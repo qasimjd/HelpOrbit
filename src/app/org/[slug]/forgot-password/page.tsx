@@ -6,6 +6,9 @@ import { SplitAuthLayout } from '@/components/auth/split-auth-layout'
 import { ForgotPasswordForm } from '@/components/auth/forgot-password-form'
 import { ThemeProvider } from '@/components/branding/theme-provider'
 
+// This page uses database queries, so it should be dynamically rendered
+export const dynamic = 'force-dynamic'
+
 interface ForgotPasswordPageProps {
   params: Promise<{ slug: string }>
 }

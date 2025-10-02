@@ -12,12 +12,12 @@ import { and, desc, eq, count, asc, inArray, gte, lte } from "drizzle-orm"
 import { parseTags, stringifyTags } from '@/lib/ticket-utils';
 import type { 
   User, 
-  Organization, 
   UserRole, 
   TicketWithDetails, 
   TicketStats, 
   TicketFilters 
 } from '@/types';
+import type { Organization } from '@/types/user';
 
 // User queries
 export async function getUserByEmail(email: string): Promise<User | null> {
@@ -143,6 +143,8 @@ export async function getOrganizationBySlug(slug: string): Promise<Organization 
     slug: result[0].slug,
     logo: result[0].logo || undefined,
     metadata: result[0].metadata ? (typeof result[0].metadata === 'string' ? JSON.parse(result[0].metadata) : result[0].metadata) : undefined,
+    createdAt: result[0].createdAt,
+    updatedAt: result[0].updatedAt,
   };
 }
 

@@ -2,6 +2,9 @@ import React from 'react'
 import { notFound } from 'next/navigation'
 import { validateOrganizationAction } from '@/server/actions/auth-actions'
 
+// This layout uses database queries, so it should be dynamically rendered
+export const dynamic = 'force-dynamic'
+
 interface OrganizationLayoutProps {
   children: React.ReactNode
   params: Promise<{ slug: string }>

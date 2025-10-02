@@ -283,8 +283,8 @@ export async function validateOrganizationAction(slug: string) {
               workingDays: [1, 2, 3, 4, 5]
             }
           },
-          createdAt: organization.createdAt,
-          updatedAt: organization.updatedAt
+          createdAt: organization.createdAt || new Date(),
+          updatedAt: organization.updatedAt || new Date()
         }
       }
     }
