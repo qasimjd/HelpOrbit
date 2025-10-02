@@ -8,18 +8,142 @@ import {
   ticketComment,
   ticketAttachment
 } from './schema';
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { and, desc, eq, or, count, asc } from "drizzle-orm"
+import { and, desc, eq, count, asc, inArray, gte, lte } from "drizzle-orm"
 import { parseTags, stringifyTags } from '@/lib/ticket-utils';
+import type { 
+  User, 
+  Organization, 
+  UserRole, 
+  TicketWithDetails, 
+  TicketStats, 
+  TicketFilters 
+} from '@/types';
 
-// Organization queries
-export async function getOrganizations() {
-  return await db.select().from(organization);
+// User queries
+export async function getUserByEmail(email: string): Promise<User | null> {
+  const result = await db
+    .select({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      image: user.image,
+      emailVerified: user.emailVerified,
+      createdAt: user.createdAt,
+    })
+    .from(user)
+    .where(eq(user.email, email))
+    .limit(1);
+  
+  return result[0] || null;
 }
 
-export async function getOrganizationBySlug(slug: string) {
-  const result = await db.select().from(organization).where(eq(organization.slug, slug)).limit(1);
+export async function getUserById(userId: string): Promise<User | null> {
+  const result = await db
+    .select({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      image: user.image,
+      emailVerified: user.emailVerified,
+      createdAt: user.createdAt,
+    })
+    .from(user)
+    .where(eq(user.id, userId))
+    .limit(1);
+  
   return result[0] || null;
+}
+
+export async function getUserOrganizations(userId: string): Promise<Organization[]> {
+  const results = await db
+    .select({
+      id: organization.id,
+      name: organization.name,
+      slug: organization.slug,
+      logo: organization.logo,
+      metadata: organization.metadata,
+      role: member.role,
+      joinedAt: member.createdAt,
+    })
+    .from(member)
+    .innerJoin(organization, eq(member.organizationId, organization.id))
+    .where(eq(member.userId, userId))
+    .orderBy(asc(organization.name));
+
+  return results.map(org => ({
+    id: org.id,
+    name: org.name,
+    slug: org.slug,
+    logo: org.logo || undefined,
+    metadata: org.metadata ? (typeof org.metadata === 'string' ? JSON.parse(org.metadata) : org.metadata) : undefined,
+    role: org.role,
+    joinedAt: org.joinedAt,
+  }));
+}
+
+export async function getUserRole(userId: string, organizationId: string): Promise<UserRole | null> {
+  const result = await db
+    .select({
+      role: member.role,
+    })
+    .from(member)
+    .where(and(
+      eq(member.userId, userId),
+      eq(member.organizationId, organizationId)
+    ))
+    .limit(1);
+
+  return result[0]?.role as UserRole || null;
+}
+
+export async function updateUserProfile(
+  userId: string, 
+  updates: { name?: string; image?: string }
+): Promise<User> {
+  const result = await db
+    .update(user)
+    .set(updates)
+    .where(eq(user.id, userId))
+    .returning({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      image: user.image,
+      emailVerified: user.emailVerified,
+      createdAt: user.createdAt,
+    });
+
+  return result[0];
+}
+
+// Organization queries
+export async function getOrganizations(): Promise<Organization[]> {
+  const results = await db.select().from(organization);
+  return results.map(org => ({
+    id: org.id,
+    name: org.name,
+    slug: org.slug,
+    logo: org.logo || undefined,
+    metadata: org.metadata ? (typeof org.metadata === 'string' ? JSON.parse(org.metadata) : org.metadata) : undefined,
+  }));
+}
+
+export async function getOrganizationBySlug(slug: string): Promise<Organization | null> {
+  const result = await db
+    .select()
+    .from(organization)
+    .where(eq(organization.slug, slug))
+    .limit(1);
+  
+  if (!result[0]) return null;
+  
+  return {
+    id: result[0].id,
+    name: result[0].name,
+    slug: result[0].slug,
+    logo: result[0].logo || undefined,
+    metadata: result[0].metadata ? (typeof result[0].metadata === 'string' ? JSON.parse(result[0].metadata) : result[0].metadata) : undefined,
+  };
 }
 
 export async function getOrganizationMembers(organizationId: string) {
@@ -42,8 +166,49 @@ export async function getOrganizationMembers(organizationId: string) {
     .orderBy(asc(member.createdAt));
 }
 
-// Ticket queries
-export async function getTicketsByOrganization(organizationId: string) {
+// Ticket queries with filtering support
+export async function getTicketsByOrganization(
+  organizationId: string, 
+  filters?: TicketFilters
+): Promise<TicketWithDetails[]> {
+  // Build where conditions
+  const whereConditions = [eq(ticket.organizationId, organizationId)];
+  
+  if (filters) {
+    // Filter by status
+    if (filters.status && filters.status.length > 0) {
+      whereConditions.push(inArray(ticket.status, filters.status));
+    }
+    
+    // Filter by priority
+    if (filters.priority && filters.priority.length > 0) {
+      whereConditions.push(inArray(ticket.priority, filters.priority));
+    }
+    
+    // Filter by assignee
+    if (filters.assigneeId) {
+      whereConditions.push(eq(ticket.assigneeId, filters.assigneeId));
+    }
+    
+    // Filter by requester
+    if (filters.requesterId) {
+      whereConditions.push(eq(ticket.requesterId, filters.requesterId));
+    }
+    
+    // Search filtering is handled in post-processing to avoid type issues
+    
+    // Filter by date range
+    if (filters.dateRange) {
+      if (filters.dateRange.from) {
+        whereConditions.push(gte(ticket.createdAt, filters.dateRange.from));
+      }
+      if (filters.dateRange.to) {
+        whereConditions.push(lte(ticket.createdAt, filters.dateRange.to));
+      }
+    }
+  }
+
+  // Execute the query
   const results = await db
     .select({
       id: ticket.id,
@@ -72,14 +237,94 @@ export async function getTicketsByOrganization(organizationId: string) {
     .from(ticket)
     .leftJoin(user, eq(ticket.requesterId, user.id))
     .leftJoin(member, eq(ticket.assigneeId, member.id))
-    .where(eq(ticket.organizationId, organizationId))
+    .where(and(...whereConditions))
     .orderBy(desc(ticket.createdAt));
 
-  // Parse tags from JSON string or comma-separated string to array
-  return results.map(ticket => ({
-    ...ticket,
-    tags: parseTags(ticket.tags)
-  }));
+  // Parse tags and ensure proper typing
+  let processedResults = results.map(ticketData => ({
+    ...ticketData,
+    tags: parseTags(ticketData.tags),
+    assignee: ticketData.assignee?.id ? {
+      id: ticketData.assignee.id,
+      userId: ticketData.assignee.userId,
+      role: ticketData.assignee.role,
+    } : null,
+  })) as TicketWithDetails[];
+
+  // Filter by tags (post-processing since tags are stored as JSON/string)
+  if (filters?.tags && filters.tags.length > 0) {
+    processedResults = processedResults.filter(ticket => {
+      if (!ticket.tags || ticket.tags.length === 0) return false;
+      return filters.tags!.some(filterTag => 
+        ticket.tags!.some(ticketTag => 
+          ticketTag.toLowerCase().includes(filterTag.toLowerCase())
+        )
+      );
+    });
+  }
+
+  // Handle search in description (post-processing)
+  if (filters?.search) {
+    processedResults = processedResults.filter(ticket => {
+      const searchTerm = filters.search!.toLowerCase();
+      return ticket.title.toLowerCase().includes(searchTerm) ||
+             (ticket.description && ticket.description.toLowerCase().includes(searchTerm));
+    });
+  }
+
+  // Handle pagination manually
+  if (filters?.offset) {
+    processedResults = processedResults.slice(filters.offset);
+  }
+  if (filters?.limit) {
+    processedResults = processedResults.slice(0, filters.limit);
+  }
+
+  return processedResults;
+}
+
+export async function getTicketStats(organizationId: string): Promise<TicketStats> {
+  const [totalResult, openResult, inProgressResult, resolvedResult] = await Promise.all([
+    // Total count
+    db
+      .select({ count: count() })
+      .from(ticket)
+      .where(eq(ticket.organizationId, organizationId)),
+    
+    // Open count
+    db
+      .select({ count: count() })
+      .from(ticket)
+      .where(and(
+        eq(ticket.organizationId, organizationId),
+        eq(ticket.status, 'open')
+      )),
+    
+    // In progress count
+    db
+      .select({ count: count() })
+      .from(ticket)
+      .where(and(
+        eq(ticket.organizationId, organizationId),
+        eq(ticket.status, 'in_progress')
+      )),
+    
+    // Resolved count
+    db
+      .select({ count: count() })
+      .from(ticket)
+      .where(and(
+        eq(ticket.organizationId, organizationId),
+        eq(ticket.status, 'resolved')
+      ))
+  ]);
+
+  return {
+    total: totalResult[0].count,
+    open: openResult[0].count,
+    inProgress: inProgressResult[0].count,
+    resolved: resolvedResult[0].count,
+  };
 }
 
 export async function getTicketById(ticketId: string, organizationId: string) {
@@ -152,57 +397,7 @@ export async function getTicketAttachments(ticketId: string) {
     .orderBy(asc(ticketAttachment.uploadedAt));
 }
 
-// Dashboard statistics
-export async function getTicketStats(organizationId: string) {
-  try {
-    console.log('Fetching ticket stats for organization:', organizationId)
-    
-    // Validate organization ID
-    if (!organizationId || organizationId.trim() === '') {
-      throw new Error('Organization ID is required')
-    }
 
-    const [
-      openTickets,
-      inProgressTickets,
-      resolvedToday,
-      urgentTickets
-    ] = await Promise.all([
-      db.select({ count: count() }).from(ticket).where(and(
-        eq(ticket.organizationId, organizationId),
-        eq(ticket.status, 'open')
-      )),
-      db.select({ count: count() }).from(ticket).where(and(
-        eq(ticket.organizationId, organizationId),
-        eq(ticket.status, 'in_progress')
-      )),
-      db.select({ count: count() }).from(ticket).where(and(
-        eq(ticket.organizationId, organizationId),
-        eq(ticket.status, 'resolved')
-        // TODO: Add date filter for today
-      )),
-      db.select({ count: count() }).from(ticket).where(and(
-        eq(ticket.organizationId, organizationId),
-        eq(ticket.priority, 'urgent'),
-        or(eq(ticket.status, 'open'), eq(ticket.status, 'in_progress'))
-      ))
-    ]);
-
-    const stats = {
-      openTickets: openTickets[0]?.count || 0,
-      inProgressTickets: inProgressTickets[0]?.count || 0,
-      resolvedToday: resolvedToday[0]?.count || 0,
-      urgentTickets: urgentTickets[0]?.count || 0,
-    };
-
-    console.log('Ticket stats result:', stats)
-    return stats
-  } catch (error) {
-    console.error('Error in getTicketStats:', error)
-    console.error('Organization ID:', organizationId)
-    throw error
-  }
-}
 
 export async function getRecentTickets(organizationId: string, limit = 5) {
   return await db
@@ -230,17 +425,6 @@ export async function getRecentTickets(organizationId: string, limit = 5) {
     .limit(limit);
 }
 
-// User queries
-export async function getUserById(userId: string) {
-  const result = await db.select().from(user).where(eq(user.id, userId)).limit(1);
-  return result[0] || null;
-}
-
-export async function getUserByEmail(email: string) {
-  const result = await db.select().from(user).where(eq(user.email, email)).limit(1);
-  return result[0] || null;
-}
-
 // Member queries
 export async function getMemberByUserAndOrg(userId: string, organizationId: string) {
   const result = await db
@@ -253,23 +437,6 @@ export async function getMemberByUserAndOrg(userId: string, organizationId: stri
     .limit(1);
   
   return result[0] || null;
-}
-
-export async function getUserOrganizations(userId: string) {
-  return await db
-    .select({
-      id: organization.id,
-      name: organization.name,
-      slug: organization.slug,
-      logo: organization.logo,
-      metadata: organization.metadata,
-      role: member.role,
-      joinedAt: member.createdAt,
-    })
-    .from(member)
-    .innerJoin(organization, eq(member.organizationId, organization.id))
-    .where(eq(member.userId, userId))
-    .orderBy(asc(member.createdAt));
 }
 
 // Invitation queries
@@ -338,7 +505,16 @@ export async function updateTicket(
     resolvedAt?: Date | null
   }
 ) {
-  const updateData: any = { updatedAt: new Date() }
+  const updateData: {
+    updatedAt: Date
+    title?: string
+    description?: string
+    status?: 'open' | 'in_progress' | 'waiting_for_customer' | 'resolved' | 'closed'
+    priority?: 'low' | 'medium' | 'high' | 'urgent'
+    assigneeId?: string | null
+    tags?: string | null
+    resolvedAt?: Date | null
+  } = { updatedAt: new Date() }
   
   if (updates.title !== undefined) updateData.title = updates.title
   if (updates.description !== undefined) updateData.description = updates.description

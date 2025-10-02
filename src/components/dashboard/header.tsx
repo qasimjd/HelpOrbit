@@ -15,18 +15,18 @@ import {
 import { cn } from '@/lib/utils'
 import NavigationHeader from '@/components/sheard/navigation-header'
 import { SidebarTrigger } from '../ui/sidebar'
-import { useUser } from '@/contexts/user-context'
-import UserMenu from '@/components/sheard/user-menu'
+import { UserMenu } from '@/components/sheard/user-menu'
+import type { User } from '@/types'
 
 interface HeaderProps {
   organizationSlug: string
   organizationName?: string
+  user?: User | null
   className?: string
 }
 
-export function Header({ organizationSlug, organizationName, className }: HeaderProps) {
+export function Header({ organizationSlug, organizationName, user, className }: HeaderProps) {
   const [showSearch, setShowSearch] = useState(false)
-  const { currentOrganization } = useUser()
 
 
   return (
@@ -117,7 +117,7 @@ export function Header({ organizationSlug, organizationName, className }: Header
           </DropdownMenu>
 
           {/* User Menu */}
-          <UserMenu />
+          <UserMenu user={user} organizationId={organizationSlug} />
 
         </div>
 
@@ -150,7 +150,7 @@ export function Header({ organizationSlug, organizationName, className }: Header
       {/* Navigation Header with Breadcrumb */}
       <NavigationHeader
         organizationSlug={organizationSlug}
-        organizationName={currentOrganization?.name || organizationName}
+        organizationName={organizationName}
       />
 
     </div>

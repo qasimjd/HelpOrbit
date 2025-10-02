@@ -41,7 +41,7 @@ export default async function OrgPage() {
           name: orgMember.name,
           slug: orgMember.slug,
           logo: orgMember.logo,
-          metadata: orgMember.metadata ? JSON.parse(orgMember.metadata) : {},
+          metadata: orgMember.metadata || {},
           createdAt: new Date(orgMember.joinedAt),
           updatedAt: new Date(orgMember.joinedAt),
           role: orgMember.role as MemberRole,

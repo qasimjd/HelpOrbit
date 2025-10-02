@@ -1,7 +1,9 @@
 import React from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { LogoutButton } from '@/components/auth/logout-button'
-import { USER_MENU_ITEMS } from '@/lib/navigation-constants'
+import { USER_MENU_ITEMS, buildHref } from '@/lib/navigation-constants'
+import { getCurrentUser } from '@/server/actions/user-actions'
+import Link from 'next/link'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -9,22 +11,43 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { useUser } from '@/contexts/user-context'
 import { Button } from '@/components/ui/button'
 import { getInitials } from '@/lib/utils'
+import { ThemeSwitcher } from '@/components/ui/theme-switcher'
+import type { User } from '@/types'
 
+interface UserMenuProps {
+    user?: User | null
+    organizationId?: string
+}
 
-const UserMenu = () => {
+// Server component version that fetches user data
+export async function ServerUserMenu({ organizationId }: { organizationId?: string }) {
+    try {
+        const userResponse = await getCurrentUser()
+        
+        if (!userResponse.success || !userResponse.data) {
+            return null
+        }
 
-    const { user } = useUser()
+        const user = userResponse.data
+        return <UserMenu user={user} organizationId={organizationId} />
+    } catch (error) {
+        console.error('Error loading user menu:', error)
+        return null
+    }
+}
+
+// Client component for when user data is already available
+export const UserMenu = ({ user, organizationId }: UserMenuProps) => {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative size-8 rounded-full">
-                    <Avatar className='ring-brand-primary'>
+                <Button variant="ghost" size="icon" asChild className="relative size-7 rounded-full">
+                    <Avatar className='ring-2 ring-brand-primary'>
                         <AvatarImage src={user?.image || undefined} alt={user?.name || 'User'} />
                         <AvatarFallback
-                            className="bg-brand-surface ring-brand-primary text-brand-primary text-xs"
+                            className="bg-brand-surface text-brand-primary text-xs"
                         >
                             {user?.name ? getInitials(user.name) : 'U'}
                         </AvatarFallback>
@@ -56,15 +79,25 @@ const UserMenu = () => {
                 {/* Menu Items */}
                 {USER_MENU_ITEMS.map((item) => (
                     <DropdownMenuItem key={item.name} asChild>
-                        {/* <Link
-                            href={buildHref(item.href, organizationSlug)}
+                        <Link
+                            href={organizationId ? buildHref(item.href, organizationId) : item.href}
                             className="flex items-center gap-2 cursor-pointer"
                         >
                             <item.icon className="h-4 w-4 text-brand-primary" />
                             {item.name}
-                        </Link> */}
+                        </Link>
                     </DropdownMenuItem>
                 ))}
+
+                <DropdownMenuSeparator />
+
+                {/* Theme Switcher */}
+                <div className="p-2">
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Theme</span>
+                        <ThemeSwitcher />
+                    </div>
+                </div>
 
                 <DropdownMenuSeparator />
 

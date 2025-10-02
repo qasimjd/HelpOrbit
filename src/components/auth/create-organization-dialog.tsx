@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Loader2, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,8 +40,14 @@ import {
 import { generateDefaultLogo, generateSlug } from "@/lib/utils";
 import { BrandedLogo } from "@/components/branding/branded-logo";
 import { Loading } from "@/components/sheard/loading";
+import { ColorPicker } from "@/components/ui/color-picker";
 
-type CreateOrganizationForm = CreateOrganizationData;
+// Form-specific schema that requires primaryColor
+const createOrganizationFormSchema = createOrganizationSchema.extend({
+  primaryColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Invalid hex color format"),
+});
+
+type CreateOrganizationForm = z.infer<typeof createOrganizationFormSchema>;
 
 interface Organization {
   id: string;
@@ -70,12 +77,13 @@ export function CreateOrganizationDialog({
   const isAuthenticated = !!session?.user;
 
   const form = useForm<CreateOrganizationForm>({
-    resolver: zodResolver(createOrganizationSchema),
+    resolver: zodResolver(createOrganizationFormSchema),
     defaultValues: {
       name: "",
       slug: "",
       logo: "",
       description: "",
+      primaryColor: "#3b82f6", // Default blue color
     },
   });
 
@@ -127,17 +135,29 @@ export function CreateOrganizationDialog({
   const onSubmit = async (data: CreateOrganizationForm) => {
     setIsSubmitting(true);
     try {
-      const metadata = data.description
-        ? { description: data.description }
-        : undefined;
+      const metadata: Record<string, string> = {};
+      
+      if (data.description) {
+        metadata.description = data.description;
+      }
+      
+      if (data.primaryColor) {
+        metadata.primaryColor = data.primaryColor;
+      }
+
       const logoUrl = data.logo || generateDefaultLogo();
 
-      const result = await createOrganizationAction({
+      // Convert form data to action input format
+      const actionInput: CreateOrganizationData = {
         name: data.name,
         slug: data.slug,
         logo: logoUrl,
-        metadata,
-      });
+        description: data.description,
+        primaryColor: data.primaryColor,
+        metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+      };
+
+      const result = await createOrganizationAction(actionInput);
 
       if (result.success && result.data) {
         onSuccess?.(result.data);
@@ -283,6 +303,22 @@ export function CreateOrganizationDialog({
                         colorful logo with initials will be generated
                         automatically.
                       </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="primaryColor"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <ColorPicker
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}

@@ -1,16 +1,16 @@
 /* Dynamic Organization Primary Color Theming with next-themes integration */
 :root {
-  /* Default organization primary color - Orange */
-  --brand-primary: #f97316;
+  /* Default organization primary color - Will be overridden by JavaScript */
+  --brand-primary: #3b82f6;
 
   /* Primary color variations - dynamically generated from --brand-primary */
-  --brand-primary-rgb: 249, 115, 22;
-  --brand-primary-500: rgba(249, 115, 22, 0.5);
-  --brand-primary-700: rgba(249, 115, 22, 0.7);
-  --brand-primary-900: rgba(249, 115, 22, 0.9);
+  --brand-primary-rgb: 59, 130, 246;
+  --brand-primary-500: rgba(59, 130, 246, 0.5);
+  --brand-primary-700: rgba(59, 130, 246, 0.7);
+  --brand-primary-900: rgba(59, 130, 246, 0.9);
 
   /* Auto-generated accent (darker version of primary) */
-  --brand-accent: #ea580c;
+  --brand-accent: #2563eb;
 
   /* Light mode (default) */
   --brand-primary-50: rgba(var(--brand-primary-rgb), 0.05);

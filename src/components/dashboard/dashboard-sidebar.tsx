@@ -10,13 +10,13 @@ import {
   BuildingIcon
 } from 'lucide-react'
 import { BrandedLogo } from '@/components/branding/branded-logo'
-import { useTheme } from '@/components/branding/theme-provider'
 import { SwitchOrganizationButton } from '@/components/auth/switch-organization-button'
 import { LogoutButton } from '@/components/auth/logout-button'
 import { Separator } from '@/components/ui/separator'
-import { useUser, useOrganizationPermissions } from '@/contexts/user-context'
+import type { User, UserRole, Organization } from '@/types'
 import { 
   MAIN_NAVIGATION, 
+  SETTINGS_NAVIGATION,
   QUICK_ACTIONS,
   buildHref,
   isNavigationActive
@@ -41,40 +41,62 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { cn } from '@/lib/utils'
+import { cn, getInitials } from '@/lib/utils'
 
 interface DashboardSidebarProps {
+  /** The slug of the current organization */
   organizationSlug: string
+  /** The organization data, null if not loaded */
+  organization: Organization | null
+  /** The current authenticated user */
+  user: User
+  /** The user's role in the current organization */
+  userRole: UserRole
 }
 
 // Additional navigation items specific to the dashboard sidebar
-const organizationMenu = [
+const ORGANIZATION_MENU = [
   { 
     name: 'Reports', 
     href: '/dashboard/reports', 
     icon: BarChart3Icon,
-    description: 'Analytics & insights'
+    description: 'Analytics & insights',
+    requiredRole: ['owner', 'admin'] as UserRole[]
   },
   {
     name: 'Invite Member',
     href: '/dashboard/members?invite=true',
     icon: MailIcon,
-    description: 'Send invitation'
+    description: 'Send invitation',
+    requiredRole: ['owner', 'admin'] as UserRole[]
   },
   { 
     name: 'Billing', 
     href: '/dashboard/billing',
     icon: BuildingIcon,
-    description: 'Manage billing and subscriptions'
+    description: 'Manage billing and subscriptions',
+    requiredRole: ['owner'] as UserRole[]
   },
-]
+] as const
 
-export function DashboardSidebar({ organizationSlug }: DashboardSidebarProps) {
+
+export function DashboardSidebar({ 
+  organizationSlug, 
+  organization, 
+  user, 
+  userRole 
+}: DashboardSidebarProps) {
   const pathname = usePathname()
-  const { organization } = useTheme()
   const { state } = useSidebar()
-  const { user } = useUser()
-  const permissions = useOrganizationPermissions()
+
+  // Calculate permissions based on user role
+  const permissions = {
+    canManageUsers: userRole === 'owner' || userRole === 'admin',
+    canManageSettings: userRole === 'owner' || userRole === 'admin',
+    canCreateTickets: true,
+    canManageTickets: userRole === 'owner' || userRole === 'admin',
+    canDeleteOrganization: userRole === 'owner',
+  }
 
   const isCollapsed = state === "collapsed"
 
@@ -86,21 +108,19 @@ export function DashboardSidebar({ organizationSlug }: DashboardSidebarProps) {
     return true
   })
 
-  // Helper function to get user initials
-  const getUserInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2)
-  }
+  const filteredSettingsNavigation = SETTINGS_NAVIGATION.filter(() => {
+    return permissions.canManageSettings
+  })
+
+  const filteredOrganizationMenu = ORGANIZATION_MENU.filter(item => {
+    return item.requiredRole.includes(userRole)
+  })
 
   return (
     <Sidebar 
       variant="inset"
       collapsible="icon"
-      className="bg-brand-background border-brand-text-10"
+      className="bg-background border-border"
     >
       <SidebarHeader className="border-b border-sidebar-border">
         <div className={cn(
@@ -116,7 +136,6 @@ export function DashboardSidebar({ organizationSlug }: DashboardSidebarProps) {
             </div>
           )}
         </div>
-        
       </SidebarHeader>
 
       <SidebarContent>
@@ -197,6 +216,52 @@ export function DashboardSidebar({ organizationSlug }: DashboardSidebarProps) {
           </SidebarGroupContent>
         </SidebarGroup>
 
+        {/* Settings Navigation */}
+        {filteredSettingsNavigation.length > 0 && (
+          <>
+            <Separator />
+            <SidebarGroup>
+              {!isCollapsed && (
+                <SidebarGroupLabel>Settings</SidebarGroupLabel>
+              )}
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {filteredSettingsNavigation.map((item) => {
+                    const Icon = item.icon
+                    const active = isNavigationActive(item.href, pathname, organizationSlug)
+                    return (
+                      <SidebarMenuItem key={item.name}>
+                        <SidebarMenuButton 
+                          asChild
+                          isActive={active}
+                          tooltip={isCollapsed ? `${item.name} - ${item.description}` : item.description}
+                          className={cn(
+                            active ? "bg-brand-surface text-muted-foreground" : "",
+                            isCollapsed ? "!w-8 !h-8 !p-0 justify-center" : ""
+                          )}
+                        >
+                          <Link href={buildHref(item.href, organizationSlug)} className={cn(
+                            "flex items-center gap-2 w-full h-full",
+                            isCollapsed ? "justify-center" : ""
+                          )}>
+                            <Icon className={cn(
+                              "flex-shrink-0",
+                              isCollapsed ? "h-4 w-4" : "h-4 w-4"
+                            )} />
+                            {!isCollapsed && (
+                              <span className="flex-1">{item.name}</span>
+                            )}
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    )
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
+
         <Separator />
 
         {/* Organization Management */}
@@ -206,7 +271,7 @@ export function DashboardSidebar({ organizationSlug }: DashboardSidebarProps) {
           )}
           <SidebarGroupContent>
             <SidebarMenu>
-              {organizationMenu.map((item) => {
+              {filteredOrganizationMenu.map((item) => {
                 const Icon = item.icon
                 const active = isNavigationActive(item.href, pathname, organizationSlug)
                 return (
@@ -257,7 +322,7 @@ export function DashboardSidebar({ organizationSlug }: DashboardSidebarProps) {
                   )}>
                     <AvatarImage src={user?.image || undefined} alt={user?.name || 'User'} />
                     <AvatarFallback className="rounded-lg">
-                      {user?.name ? getUserInitials(user.name) : 'U'}
+                      {user?.name ? getInitials(user.name) : 'U'}
                     </AvatarFallback>
                   </Avatar>
                   {!isCollapsed && (
@@ -283,7 +348,7 @@ export function DashboardSidebar({ organizationSlug }: DashboardSidebarProps) {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <SwitchOrganizationButton className="w-full">
+                  <SwitchOrganizationButton className='w-full'>
                     Switch Organization
                   </SwitchOrganizationButton>
                 </DropdownMenuItem>

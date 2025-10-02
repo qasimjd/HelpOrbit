@@ -1,72 +1,32 @@
 "use client"
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import React, { createContext, useContext, useEffect, useState } from 'react'
 import { Organization, OrganizationBranding, defaultBranding } from '@/types/organization'
 
-interface ThemeContextValue {
+interface BrandingContextValue {
   organization: Organization | null
   branding: OrganizationBranding
   setOrganization: (org: Organization | null) => void
   updateBranding: (branding: Partial<OrganizationBranding>) => void
-  // Manual theme management
-  theme: 'light' | 'dark'
-  setTheme: (theme: 'light' | 'dark') => void
 }
 
-const ThemeContext = createContext<ThemeContextValue | undefined>(undefined)
+const BrandingContext = createContext<BrandingContextValue | undefined>(undefined)
 
-interface ThemeProviderProps {
+interface BrandingProviderProps {
   children: React.ReactNode
   initialOrganization?: Organization | null
 }
 
-// Main component that handles organization branding with manual theme management
-function BrandingProvider({ children, initialOrganization = null }: ThemeProviderProps) {
-  // Initialize theme from localStorage
-  const getInitialTheme = (): 'light' | 'dark' => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('helporbit-theme-mode')
-      return (saved as 'light' | 'dark') || 'light'
-    }
-    return 'light'
-  }
-  
-  const [theme, setManualTheme] = useState<'light' | 'dark'>(getInitialTheme)
-  
-  const setTheme = useCallback((newTheme: 'light' | 'dark') => {
-    setManualTheme(newTheme)
-    // Apply theme class immediately
-    if (newTheme === 'dark') {
-      document.documentElement.classList.add('dark')
-      document.documentElement.classList.remove('light')
-    } else {
-      document.documentElement.classList.add('light')
-      document.documentElement.classList.remove('dark')
-    }
-    // Save to localStorage for persistence
-    localStorage.setItem('helporbit-theme-mode', newTheme)
-  }, [])
-  
-  // Apply theme class on mount
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark')
-      document.documentElement.classList.remove('light')
-    } else {
-      document.documentElement.classList.add('light')
-      document.documentElement.classList.remove('dark')
-    }
-  }, [theme])
+// Main component that handles organization branding only (no theme management)
+function BrandingProvider({ children, initialOrganization = null }: BrandingProviderProps) {
   // Initialize with saved branding if available
   const getInitialBranding = (): OrganizationBranding => {
     if (typeof window !== 'undefined') {
       const savedPrimaryColor = localStorage.getItem('helporbit-primary-color')
-      const savedThemeMode = localStorage.getItem('helporbit-theme-mode')
       
       if (savedPrimaryColor) {
         return {
           primaryColor: savedPrimaryColor,
-          themeMode: (savedThemeMode as 'light' | 'dark' | 'auto') || 'light',
           logoUrl: localStorage.getItem('helporbit-org-logo') || undefined,
         }
       }
@@ -78,13 +38,12 @@ function BrandingProvider({ children, initialOrganization = null }: ThemeProvide
   const [branding, setBranding] = useState<OrganizationBranding>(getInitialBranding)
   const [isClient, setIsClient] = useState(false)
 
-  // Initialize client state and load persisted theme
+  // Initialize client state and load persisted organization
   useEffect(() => {
     setIsClient(true)
     
     // Try to restore organization from localStorage
     const savedOrgId = localStorage.getItem('helporbit-selected-organization')
-    const savedThemeMode = localStorage.getItem('helporbit-theme-mode')
     const savedPrimaryColor = localStorage.getItem('helporbit-primary-color')
     
     if (savedOrgId && savedPrimaryColor && !initialOrganization) {
@@ -94,7 +53,6 @@ function BrandingProvider({ children, initialOrganization = null }: ThemeProvide
         name: localStorage.getItem('helporbit-org-name') || 'Unknown Organization',
         slug: localStorage.getItem('helporbit-org-slug') || savedOrgId,
         primaryColor: savedPrimaryColor,
-        themeMode: (savedThemeMode as 'light' | 'dark' | 'auto') || 'light',
         logoUrl: localStorage.getItem('helporbit-org-logo') || undefined,
         settings: {
           allowPublicRegistration: true,
@@ -113,6 +71,43 @@ function BrandingProvider({ children, initialOrganization = null }: ThemeProvide
       }
       setOrganization(restoredOrg)
     }
+
+    // Listen for storage changes to update organization branding
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'helporbit-primary-color' && e.newValue) {
+        // Reload organization data from localStorage
+        const orgId = localStorage.getItem('helporbit-selected-organization')
+        const primaryColor = e.newValue
+        
+        if (orgId && primaryColor) {
+          const updatedOrg: Organization = {
+            id: orgId,
+            name: localStorage.getItem('helporbit-org-name') || 'Unknown Organization',
+            slug: localStorage.getItem('helporbit-org-slug') || orgId,
+            primaryColor: primaryColor,
+            logoUrl: localStorage.getItem('helporbit-org-logo') || undefined,
+            settings: {
+              allowPublicRegistration: true,
+              defaultTicketPriority: 'medium' as const,
+              autoAssignTickets: false,
+              enableNotifications: true,
+              workingHours: {
+                start: '09:00',
+                end: '17:00',
+                timezone: 'UTC',
+                workingDays: [1, 2, 3, 4, 5]
+              }
+            },
+            createdAt: new Date(),
+            updatedAt: new Date()
+          }
+          setOrganization(updatedOrg)
+        }
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
   }, [initialOrganization])
 
   // Persist organization data when it changes
@@ -124,7 +119,6 @@ function BrandingProvider({ children, initialOrganization = null }: ThemeProvide
       localStorage.setItem('helporbit-org-name', organization.name)
       localStorage.setItem('helporbit-org-slug', organization.slug)
       localStorage.setItem('helporbit-primary-color', organization.primaryColor)
-      localStorage.setItem('helporbit-theme-mode', organization.themeMode || 'light')
       if (organization.logoUrl) {
         localStorage.setItem('helporbit-org-logo', organization.logoUrl)
       }
@@ -134,7 +128,6 @@ function BrandingProvider({ children, initialOrganization = null }: ThemeProvide
       localStorage.removeItem('helporbit-org-name')
       localStorage.removeItem('helporbit-org-slug')
       localStorage.removeItem('helporbit-primary-color')
-      localStorage.removeItem('helporbit-theme-mode')
       localStorage.removeItem('helporbit-org-logo')
     }
   }, [organization, isClient])
@@ -142,25 +135,16 @@ function BrandingProvider({ children, initialOrganization = null }: ThemeProvide
   // Update branding when organization changes
   useEffect(() => {
     if (organization) {
-      const themeMode = organization.themeMode || 'light'
       setBranding({
         logoUrl: organization.logoUrl,
         primaryColor: organization.primaryColor,
-        themeMode: themeMode,
       })
     } else {
       setBranding(defaultBranding)
     }
   }, [organization])
 
-  // Sync organization theme mode with our manual theme system
-  useEffect(() => {
-    if (branding.themeMode && branding.themeMode !== 'auto') {
-      setTheme(branding.themeMode as 'light' | 'dark')
-    }
-  }, [branding.themeMode, setTheme])
-
-  // Apply organization primary color when branding or theme changes
+  // Apply organization primary color when branding changes
   useEffect(() => {
     const root = document.documentElement
     
@@ -170,7 +154,6 @@ function BrandingProvider({ children, initialOrganization = null }: ThemeProvide
     
     // Only apply changes if different from current values
     if (currentPrimaryColor !== targetPrimaryColor) {
-      
       // Set the primary color - this is the only organization-specific color
       root.style.setProperty('--brand-primary', branding.primaryColor)
 
@@ -186,8 +169,8 @@ function BrandingProvider({ children, initialOrganization = null }: ThemeProvide
 
       const rgb = hexToRgb(branding.primaryColor)
       if (rgb) {
-        // Use next-themes to detect dark mode
-        const isDark = theme === 'dark'
+        // Check if we're in dark mode by looking at document classes
+        const isDark = document.documentElement.classList.contains('dark')
         
         // Set RGB values for use in CSS custom properties
         root.style.setProperty('--brand-primary-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`)
@@ -208,30 +191,28 @@ function BrandingProvider({ children, initialOrganization = null }: ThemeProvide
         root.style.setProperty('--brand-accent', `rgb(${darkerR}, ${darkerG}, ${darkerB})`)
       }
     }
-  }, [branding, theme])
+  }, [branding])
 
   const updateBranding = (updates: Partial<OrganizationBranding>) => {
     setBranding(current => ({ ...current, ...updates }))
   }
 
-  const contextValue: ThemeContextValue = {
+  const contextValue: BrandingContextValue = {
     organization,
     branding,
     setOrganization,
     updateBranding,
-    theme,
-    setTheme,
   }
 
   return (
-    <ThemeContext.Provider value={contextValue}>
+    <BrandingContext.Provider value={contextValue}>
       {children}
-    </ThemeContext.Provider>
+    </BrandingContext.Provider>
   )
 }
 
-// Main ThemeProvider with organization branding and manual theme management
-export function ThemeProvider({ children, initialOrganization = null }: ThemeProviderProps) {
+// Main BrandingProvider export
+export function ThemeProvider({ children, initialOrganization = null }: BrandingProviderProps) {
   return (
     <BrandingProvider initialOrganization={initialOrganization}>
       {children}
@@ -240,9 +221,35 @@ export function ThemeProvider({ children, initialOrganization = null }: ThemePro
 }
 
 export const useTheme = () => {
-  const context = useContext(ThemeContext)
+  const context = useContext(BrandingContext)
   if (context === undefined) {
     throw new Error('useTheme must be used within a ThemeProvider')
   }
   return context
+}
+
+// Utility function to update organization theme from anywhere in the app
+export const updateOrganizationTheme = (organizationData: {
+  id: string
+  name: string
+  slug: string
+  primaryColor: string
+  logoUrl?: string
+}) => {
+  if (typeof window !== 'undefined') {
+    // Update localStorage with the correct organization data
+    localStorage.setItem('helporbit-selected-organization', organizationData.id)
+    localStorage.setItem('helporbit-org-name', organizationData.name)
+    localStorage.setItem('helporbit-org-slug', organizationData.slug)
+    localStorage.setItem('helporbit-primary-color', organizationData.primaryColor)
+    if (organizationData.logoUrl) {
+      localStorage.setItem('helporbit-org-logo', organizationData.logoUrl)
+    }
+
+    // Trigger a storage event to update the theme provider
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'helporbit-primary-color',
+      newValue: organizationData.primaryColor
+    }))
+  }
 }

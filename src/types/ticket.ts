@@ -52,7 +52,7 @@ export interface TicketAttachment {
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed'
+export type TicketStatus = 'open' | 'in_progress' | 'waiting_for_customer' | 'resolved' | 'closed'
 export type TicketPriority = 'low' | 'medium' | 'high' | 'urgent'
 
 export interface CreateTicketData {
@@ -70,6 +70,7 @@ export interface UpdateTicketData {
   priority?: TicketPriority
   assigneeId?: string | null
   tags?: string[]
+  resolvedAt?: Date | null
 }
 
 // API Response type
@@ -91,16 +92,16 @@ export interface TicketFilters {
     from: Date
     to: Date
   }
+  limit?: number
+  offset?: number
 }
 
 // Ticket statistics
 export interface TicketStats {
-  openTickets: number
-  inProgressTickets: number
-  resolvedToday: number
-  urgentTickets: number
-  totalTickets?: number
-  averageResolutionTime?: number
+  total: number
+  open: number
+  inProgress: number
+  resolved: number
 }
 
 // Ticket context value

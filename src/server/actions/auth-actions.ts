@@ -247,13 +247,19 @@ export async function validateOrganizationAction(slug: string) {
     const organization = await getOrganizationBySlug(slug)
 
     if (organization) {
-      // Parse metadata if it exists (it might contain additional settings like primaryColor)
+      // Handle metadata if it exists (it might contain additional settings like primaryColor)
       let metadata = {};
       if (organization.metadata) {
         try {
-          metadata = JSON.parse(organization.metadata);
+          // Check if metadata is already an object or needs parsing
+          if (typeof organization.metadata === 'string') {
+            metadata = JSON.parse(organization.metadata);
+          } else if (typeof organization.metadata === 'object') {
+            metadata = organization.metadata;
+          }
         } catch (e) {
           console.warn('Failed to parse organization metadata:', e);
+          metadata = {};
         }
       }
 
@@ -264,7 +270,6 @@ export async function validateOrganizationAction(slug: string) {
           slug: organization.slug,
           name: organization.name,
           primaryColor: (metadata as any).primaryColor || '#3b82f6', // Default blue if no color set
-          themeMode: ((metadata as any).themeMode || 'light') as 'light' | 'dark' | 'auto',
           logoUrl: organization.logo || undefined,
           settings: {
             allowPublicRegistration: (metadata as any).allowPublicRegistration ?? true,

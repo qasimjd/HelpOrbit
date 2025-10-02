@@ -1,7 +1,6 @@
 'use server'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { revalidatePath, revalidateTag } from 'next/cache'
 import { unstable_cache } from 'next/cache'
 import { 
   getTicketsByOrganization, 
@@ -11,8 +10,10 @@ import {
   updateTicket,
   deleteTicket
 } from '@/server/db/queries'
-import { requireServerSession } from '@/lib/session'
+import { requireUserAccess } from './user-actions'
 import { generateTicketId, parseTags } from '@/lib/ticket-utils'
+import { CACHE_TAGS, CACHE_CONFIG } from '@/server/lib/cache-constants'
+import { revalidateTicketCache, revalidateCommonPaths } from '@/server/lib/cache'
 import type { 
   Ticket, 
   TicketWithDetails, 
@@ -23,14 +24,16 @@ import type {
   ApiResponse
 } from '@/types'
 
-// Get tickets for an organization with optional filters (with caching)
+/**
+ * Get tickets for an organization with optional filters and caching
+ */
 export async function getTicketsAction(
   organizationId: string, 
   filters?: TicketFilters
 ): Promise<ApiResponse<{ tickets: TicketWithDetails[]; total: number }>> {
   try {
-    // Require authentication
-    await requireServerSession()
+    // Require authentication and organization access
+    await requireUserAccess(organizationId)
     
     if (!organizationId) {
       return {
@@ -39,15 +42,18 @@ export async function getTicketsAction(
       }
     }
 
+    // Create cache key that includes filters
+    const filterKey = filters ? JSON.stringify(filters) : 'all'
+    
     // Use cached function for tickets
     const getCachedTickets = unstable_cache(
       async () => {
-        return await getTicketsByOrganization(organizationId)
+        return await getTicketsByOrganization(organizationId, filters)
       },
-      [`tickets-${organizationId}`],
+      [`tickets-${organizationId}-${filterKey}`],
       {
-        tags: [`tickets-${organizationId}`],
-        revalidate: 300, // Cache for 5 minutes
+        tags: [CACHE_TAGS.TICKET.byOrganization(organizationId), CACHE_TAGS.TICKET.all],
+        ...CACHE_CONFIG.SHORT
       }
     )
 
@@ -109,8 +115,8 @@ export async function getTicketStatsAction(
   organizationId: string
 ): Promise<ApiResponse<TicketStats>> {
   try {
-    // Require authentication
-    await requireServerSession()
+    // Require authentication and organization access
+    await requireUserAccess(organizationId)
     
     if (!organizationId) {
       return {
@@ -152,8 +158,8 @@ export async function getTicketByIdAction(
   organizationId: string
 ): Promise<ApiResponse<TicketWithDetails>> {
   try {
-    // Require authentication
-    await requireServerSession()
+    // Require authentication and organization access
+    await requireUserAccess(organizationId)
     
     if (!ticketId || !organizationId) {
       return {
@@ -202,8 +208,8 @@ export async function createTicketAction(
   ticketData: CreateTicketData
 ): Promise<ApiResponse<Ticket>> {
   try {
-    // Require authentication
-    const session = await requireServerSession()
+    // Require authentication and organization access
+    const { userId } = await requireUserAccess(organizationId)
     
     if (!organizationId) {
       return {
@@ -259,7 +265,7 @@ export async function createTicketAction(
       priority: ticketData.priority,
       tags: ticketData.tags && ticketData.tags.length > 0 ? ticketData.tags : null,
       organizationId,
-      requesterId: session.user.id,
+      requesterId: userId,
       assigneeId: null, // Will be assigned later
       status: 'open' as const
     }
@@ -275,10 +281,8 @@ export async function createTicketAction(
     }
 
     // Revalidate cache tags and paths
-    revalidateTag(`tickets-${organizationId}`)
-    revalidateTag(`ticket-stats-${organizationId}`)
-    revalidatePath(`/org/*/dashboard`)
-    revalidatePath(`/org/*/dashboard/tickets`)
+    await revalidateTicketCache(organizationId)
+    await revalidateCommonPaths()
 
     return {
       success: true,
@@ -304,8 +308,8 @@ export async function updateTicketAction(
   updates: UpdateTicketData
 ): Promise<ApiResponse<Ticket>> {
   try {
-    // Require authentication
-    await requireServerSession()
+    // Require authentication and organization access
+    await requireUserAccess(organizationId)
     
     if (!ticketId || !organizationId) {
       return {
@@ -357,12 +361,8 @@ export async function updateTicketAction(
     }
 
     // Revalidate cache tags and paths
-    revalidateTag(`ticket-${ticketId}`)
-    revalidateTag(`tickets-${organizationId}`)
-    revalidateTag(`ticket-stats-${organizationId}`)
-    revalidatePath(`/org/*/dashboard`)
-    revalidatePath(`/org/*/dashboard/tickets`)
-    revalidatePath(`/org/*/dashboard/tickets/${ticketId}`)
+    await revalidateTicketCache(organizationId, ticketId)
+    await revalidateCommonPaths()
 
     return {
       success: true,
@@ -387,8 +387,8 @@ export async function deleteTicketAction(
   organizationId: string
 ): Promise<ApiResponse<{ deleted: boolean }>> {
   try {
-    // Require authentication
-    await requireServerSession()
+    // Require authentication and organization access
+    await requireUserAccess(organizationId)
     
     if (!ticketId || !organizationId) {
       return {
@@ -408,11 +408,8 @@ export async function deleteTicketAction(
     }
 
     // Revalidate cache tags and paths
-    revalidateTag(`ticket-${ticketId}`)
-    revalidateTag(`tickets-${organizationId}`)
-    revalidateTag(`ticket-stats-${organizationId}`)
-    revalidatePath(`/org/*/dashboard`)
-    revalidatePath(`/org/*/dashboard/tickets`)
+    await revalidateTicketCache(organizationId, ticketId)
+    await revalidateCommonPaths()
 
     return {
       success: true,
@@ -461,3 +458,6 @@ export async function changeTicketStatusAction(
     }
   }
 }
+
+
+
