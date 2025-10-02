@@ -27,6 +27,7 @@ export function SplitOrganizationLayout({ children }: SplitOrganizationLayoutPro
             <LogoWithText 
               size="md" 
               orientation="vertical"
+              helpOrbit
               showTagline={true}
               className="justify-center"
             />

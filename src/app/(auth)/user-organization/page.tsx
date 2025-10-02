@@ -29,7 +29,7 @@ export default async function OrgPage() {
   const user = session?.user
 
   if (!user) {
-    redirect('/login?from=org')
+    redirect('/login?from=/user-organization')
   }
 
   // Fetch organizations server-side

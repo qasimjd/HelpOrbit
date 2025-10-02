@@ -106,7 +106,7 @@ export function OrganizationFinder({ onOrganizationSelect, className }: Organiza
 
       {/* Create New Organization Button */}
       {!searchTerm.trim() && (
-        <Link href="/org">
+        <Link href="/user-organization" className="w-full">
           <Button
             variant="outline"
             className="flex items-center gap-2 w-full"

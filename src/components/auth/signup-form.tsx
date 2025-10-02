@@ -98,7 +98,8 @@ export function SignUpForm({
             required
             placeholder="Enter your full name"
             className={cn(
-              "input-brand transition-colors",
+              "transition-colors",
+              organizationSlug && "input-brand",
               state.errors && "name" in state.errors && state.errors.name &&
               "border-destructive focus:border-destructive"
             )}
@@ -122,7 +123,8 @@ export function SignUpForm({
             required
             placeholder="Enter your email"
             className={cn(
-              "input-brand transition-colors",
+              "transition-colors",
+              organizationSlug && "input-brand",
               state.errors && "email" in state.errors && state.errors.email &&
               "border-destructive focus:border-destructive"
             )}
@@ -150,7 +152,8 @@ export function SignUpForm({
               required
               placeholder="Create a password"
               className={cn(
-                "input-brand pr-10 transition-colors",
+                "pr-10 transition-colors",
+                organizationSlug && "input-brand",
                 state.errors && "password" in state.errors && state.errors.password &&
                 "border-destructive focus:border-destructive"
               )}
@@ -175,7 +178,7 @@ export function SignUpForm({
         </div>
 
         {/* Submit Button */}
-        <Button type="submit" disabled={isPending} className="w-full">
+        <Button type="submit" disabled={isPending} className={cn("w-full", organizationSlug && "btn-brand-primary")}>
           {isPending ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />

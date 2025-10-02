@@ -101,7 +101,8 @@ export function LoginForm({
             required
             placeholder="Enter your email"
             className={cn(
-              "input-brand transition-colors",
+              "transition-colors",
+              organizationSlug && "input-brand",
               state.errors?.email &&
               "border-destructive focus:border-destructive"
             )}
@@ -129,7 +130,8 @@ export function LoginForm({
               required
               placeholder="Enter your password"
               className={cn(
-                "input-brand pr-10 transition-colors",
+                "pr-10 transition-colors",
+                organizationSlug && "input-brand",
                 state.errors?.password &&
                 "border-destructive focus:border-destructive"
               )}
@@ -164,6 +166,9 @@ export function LoginForm({
               checked={rememberMe}
               onCheckedChange={(checked) => setRememberMe(checked === true)}
               disabled={isPending}
+              className={cn(
+                organizationSlug && "border-brand-primary",
+              )}
             />
             <Label
               htmlFor="remember-me"
@@ -213,7 +218,7 @@ export function LoginForm({
           <p>
             Don&apos;t have an account?{" "}
             <Link
-              href="/signup"
+              href={from ? `/signup?from=${from}` : '/signup'}
               className="font-medium text-primary hover:underline"
             >
               Create account

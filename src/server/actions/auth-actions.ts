@@ -115,7 +115,7 @@ export async function loginAction(prevState: { success?: boolean; error?: string
         success: true,
         message: 'Login successful!',
         errors: {},
-        redirectTo: '/org'
+        redirectTo: '/user-organization'
       }
     } else if (organizationSlug) {
       // Original organization-specific login flow
