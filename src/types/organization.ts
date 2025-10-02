@@ -4,7 +4,6 @@ export interface Organization {
   name: string
   logoUrl?: string
   primaryColor: string
-  themeMode: 'light' | 'dark' | 'auto'
   domain?: string
   settings: OrganizationSettings
   createdAt: Date
@@ -27,13 +26,11 @@ export interface OrganizationSettings {
 export interface OrganizationBranding {
   logoUrl?: string
   primaryColor: string
-  themeMode: 'light' | 'dark' | 'auto'
 }
 
 // Default branding configuration
 export const defaultBranding: OrganizationBranding = {
-  primaryColor: '#3b82f6', // Blue-500
-  themeMode: 'light'
+  primaryColor: '#3b82f6' // Blue-500
 }
 
 export type TicketPriority = 'low' | 'medium' | 'high' | 'urgent'

@@ -14,6 +14,7 @@ import {
 import Link from 'next/link'
 import { getDashboardData } from '@/server/actions/dashboard-actions'
 import { getOrganizationBySlug } from '@/server/db/queries'
+import { statusColors } from '@/lib/ticket-utils'
 
 interface DashboardPageProps {
   params: Promise<{ slug: string }>
@@ -32,17 +33,6 @@ const iconMap = {
   AlertCircleIcon
 }
 
-const statusColors = {
-  urgent: 'bg-red-100 text-red-800',
-  high: 'bg-orange-100 text-orange-800', 
-  medium: 'bg-yellow-100 text-yellow-800',
-  low: 'bg-gray-100 text-gray-800',
-  open: 'bg-blue-100 text-blue-800',
-  in_progress: 'bg-yellow-100 text-yellow-800',
-  waiting_for_customer: 'bg-purple-100 text-purple-800',
-  resolved: 'bg-green-100 text-green-800',
-  closed: 'bg-gray-100 text-gray-800'
-}
 
 export default async function DashboardPage({ params }: DashboardPageProps) {
   const { slug } = await params
@@ -57,7 +47,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
   const { stats, recentTickets } = await getDashboardData(organization.id)
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="space-y-8">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>

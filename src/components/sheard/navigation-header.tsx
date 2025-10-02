@@ -129,7 +129,7 @@ const NavigationHeader = ({
   }, [pathname, organizationSlug, organizationName])
 
   return (
-    <header className={`flex h-8 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 ${className || ''}`}>
+    <header className={`flex h-9 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 ${className || ''}`}>
       <div className="px-6">
         <Breadcrumb>
           <BreadcrumbList>

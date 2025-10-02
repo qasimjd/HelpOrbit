@@ -60,12 +60,12 @@ export default async function TicketsPage({ params }: TicketsPageProps) {
   const tickets = await getCachedTicketsForOrg();
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Tickets</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-3xl font-bold">Tickets</h1>
+          <p className="text-foreground mt-1">
             Manage and track all support tickets
           </p>
         </div>
@@ -154,7 +154,7 @@ export default async function TicketsPage({ params }: TicketsPageProps) {
         <Button variant="outline" size="sm" disabled>
           Previous
         </Button>
-        <Button variant="outline" size="sm" className="bg-brand-primary text-white">
+        <Button variant="outline" size="sm" className="bg-brand-primary">
           1
         </Button>
         <Button variant="outline" size="sm">

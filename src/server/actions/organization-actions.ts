@@ -6,7 +6,6 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { requireServerSession } from "@/lib/session";
 import type {
-  CreateOrganizationInput,
   UpdateOrganizationInput,
   ActionResponse,
   OrganizationData,
@@ -15,7 +14,8 @@ import type {
 } from "@/types/auth-organization";
 import { 
   createOrganizationSchema,
-  updateOrganizationSchema
+  updateOrganizationSchema,
+  type CreateOrganizationData
 } from "@/schemas/organization";
 import { getOrganizationBySlug, getOrganizations, getUserOrganizations } from "@/server/db/queries";
 
@@ -23,7 +23,7 @@ import { getOrganizationBySlug, getOrganizations, getUserOrganizations } from "@
  * Create a new organization
  */
 export async function createOrganizationAction(
-  input: CreateOrganizationInput
+  input: CreateOrganizationData
 ): Promise<ActionResponse<OrganizationData>> {
   try {
     // Ensure user is authenticated
@@ -399,7 +399,7 @@ export async function searchOrganizations(searchTerm: string) {
     // Filter organizations based on search term
     return organizations
       .filter(org => {
-        const metadata = org.metadata ? JSON.parse(org.metadata) : {};
+        const metadata = org.metadata || {};
         const name = org.name.toLowerCase();
         const slug = org.slug.toLowerCase();
         const domain = metadata.domain?.toLowerCase() || '';
@@ -410,7 +410,7 @@ export async function searchOrganizations(searchTerm: string) {
                domain.includes(search);
       })
       .map(org => {
-        const metadata = org.metadata ? JSON.parse(org.metadata) : {};
+        const metadata = org.metadata || {};
         return {
           id: org.id,
           slug: org.slug,
@@ -435,7 +435,7 @@ export async function getOrganizationInfo(slug: string) {
     const org = await getOrganizationBySlug(slug);
     if (!org) return null;
     
-    const metadata = org.metadata ? JSON.parse(org.metadata) : {};
+    const metadata = org.metadata || {};
     return {
       id: org.id,
       slug: org.slug,

@@ -11,11 +11,16 @@ export async function getDashboardData(organizationId: string) {
       getRecentTickets(organizationId, 5)
     ]);
 
+    // Ensure stats is not null/undefined
+    if (!stats) {
+      throw new Error('Failed to fetch ticket statistics');
+    }
+
     // Format stats for dashboard
     const dashboardStats = [
       {
         title: 'Open Tickets',
-        value: stats.openTickets.toString(),
+        value: stats.open.toString(),
         change: '+2 from yesterday', // TODO: Implement actual change calculation
         icon: 'TicketIcon',
         color: 'text-blue-600',
@@ -23,33 +28,40 @@ export async function getDashboardData(organizationId: string) {
       },
       {
         title: 'In Progress',
-        value: stats.inProgressTickets.toString(),
+        value: stats.inProgress.toString(),
         change: '+1 from yesterday',
         icon: 'ClockIcon',
         color: 'text-yellow-600',
         bgColor: 'bg-yellow-100'
       },
       {
-        title: 'Resolved Today',
-        value: stats.resolvedToday.toString(),
+        title: 'Resolved',
+        value: stats.resolved.toString(),
         change: '+5 from yesterday',
         icon: 'CheckCircleIcon',
         color: 'text-green-600',
         bgColor: 'bg-green-100'
       },
       {
-        title: 'Urgent Priority',
-        value: stats.urgentTickets.toString(),
+        title: 'Total Tickets',
+        value: stats.total.toString(),
         change: 'Same as yesterday',
         icon: 'AlertCircleIcon',
-        color: 'text-red-600',
-        bgColor: 'bg-red-100'
+        color: 'text-gray-600',
+        bgColor: 'bg-gray-100'
       }
     ];
 
     // Format recent tickets for dashboard
     const formattedRecentTickets = recentTickets.map(ticket => {
-      const tags = ticket.tags ? JSON.parse(ticket.tags) : [];
+      let tags = [];
+      try {
+        tags = ticket.tags ? JSON.parse(ticket.tags) : [];
+      } catch (error) {
+        console.warn('Failed to parse ticket tags:', error);
+        tags = [];
+      }
+      
       return {
         id: ticket.id,
         title: ticket.title,

@@ -1,15 +1,11 @@
 (function() {
   try {
     const savedPrimaryColor = localStorage.getItem('helporbit-primary-color');
-    // Use next-themes storage for theme detection
-    const nextTheme = localStorage.getItem('theme');
     
     if (savedPrimaryColor) {
       const root = document.documentElement;
-      // Check next-themes or fallback to our storage
-      const isDark = nextTheme === 'dark' || (!nextTheme && localStorage.getItem('helporbit-theme-mode') === 'dark');
       
-      // Apply primary color immediately
+      // Apply primary color immediately - this prevents the flash
       root.style.setProperty('--brand-primary', savedPrimaryColor);
       
       // Generate RGB values
@@ -21,11 +17,11 @@
         
         root.style.setProperty('--brand-primary-rgb', r + ', ' + g + ', ' + b);
         
-        // Set transparency variations
-        root.style.setProperty('--brand-primary-50', 'rgba(' + r + ', ' + g + ', ' + b + ', ' + (isDark ? 0.1 : 0.05) + ')');
-        root.style.setProperty('--brand-primary-100', 'rgba(' + r + ', ' + g + ', ' + b + ', ' + (isDark ? 0.15 : 0.1) + ')');
-        root.style.setProperty('--brand-primary-200', 'rgba(' + r + ', ' + g + ', ' + b + ', ' + (isDark ? 0.25 : 0.2) + ')');
-        root.style.setProperty('--brand-primary-300', 'rgba(' + r + ', ' + g + ', ' + b + ', ' + (isDark ? 0.35 : 0.3) + ')');
+        // Set transparency variations (we'll update these later based on actual theme)
+        root.style.setProperty('--brand-primary-50', 'rgba(' + r + ', ' + g + ', ' + b + ', 0.05)');
+        root.style.setProperty('--brand-primary-100', 'rgba(' + r + ', ' + g + ', ' + b + ', 0.1)');
+        root.style.setProperty('--brand-primary-200', 'rgba(' + r + ', ' + g + ', ' + b + ', 0.2)');
+        root.style.setProperty('--brand-primary-300', 'rgba(' + r + ', ' + g + ', ' + b + ', 0.3)');
         root.style.setProperty('--brand-primary-500', 'rgba(' + r + ', ' + g + ', ' + b + ', 0.5)');
         root.style.setProperty('--brand-primary-700', 'rgba(' + r + ', ' + g + ', ' + b + ', 0.7)');
         root.style.setProperty('--brand-primary-900', 'rgba(' + r + ', ' + g + ', ' + b + ', 0.9)');
@@ -36,9 +32,11 @@
         const darkerB = Math.max(0, Math.floor(b * 0.8));
         root.style.setProperty('--brand-accent', 'rgb(' + darkerR + ', ' + darkerG + ', ' + darkerB + ')');
       }
+    } else {
+      // Set default blue color if no organization color is saved
+      root.style.setProperty('--brand-primary', '#3b82f6');
+      root.style.setProperty('--brand-primary-rgb', '59, 130, 246');
     }
-    
-    // Note: next-themes will handle the theme class application
   } catch {
     // Silently fail if localStorage is not available
   }

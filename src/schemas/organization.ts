@@ -1,12 +1,16 @@
 import { z } from "zod"
 import { organizationNameSchema, organizationSlugSchema, urlSchema, idSchema } from "./common"
 
+// Hex color validation
+const hexColorSchema = z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Invalid hex color format")
+
 // Create organization schema
 export const createOrganizationSchema = z.object({
   name: organizationNameSchema,
   slug: organizationSlugSchema,
   logo: urlSchema.optional().or(z.literal("")),
   description: z.string().max(500, "Description too long").optional(),
+  primaryColor: hexColorSchema.optional().default("#3b82f6"),
   metadata: z.record(z.string(), z.any()).optional(),
 })
 
