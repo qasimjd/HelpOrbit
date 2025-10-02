@@ -121,7 +121,7 @@ export function OrganizationFinder({ onOrganizationSelect, className }: Organiza
       {searchTerm.trim() && (
         <div className="space-y-3">
           {searchLoading ? (
-            <div className="flex flex-col items-center py-8">
+            <div className="flex flex-col items-center py-[49px]">
               <Loading text="Searching organizations..." />
             </div>
           ) : organizations.length > 0 ? (

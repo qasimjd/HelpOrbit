@@ -16,7 +16,7 @@ export default function SelectOrganizationPage() {
   return (
     <SplitOrganizationLayout>
       {/* Organization Selection Card */}
-      <Card className="border-2 shadow-lg lg:mt-28">
+      <Card className="border-2 shadow-lg lg:mt-8">
         <CardHeader className="text-center">
           {/* Header */}
           <div className="text-center space-y-2">

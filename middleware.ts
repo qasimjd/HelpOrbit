@@ -37,8 +37,10 @@ export async function middleware(request: NextRequest) {
     
     // Handle authentication logic
     if (isAuthenticated) {
-        // If authenticated and trying to access auth pages, redirect to select organization
-        if (isAuthRoute && !pathname.match(/^\/org\/[^\/]+\/(login|forgot-password)$/)) {
+        // If authenticated and trying to access auth pages (except select-organization), redirect to select organization
+        if (isAuthRoute && 
+            !pathname.startsWith('/select-organization') && 
+            !pathname.match(/^\/org\/[^\/]+\/(login|forgot-password)$/)) {
             return NextResponse.redirect(new URL('/select-organization', request.url));
         }
         
