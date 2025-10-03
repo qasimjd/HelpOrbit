@@ -1,7 +1,7 @@
-import { 
-  TicketIcon, 
-  HomeIcon, 
-  UsersIcon, 
+import {
+  TicketIcon,
+  HomeIcon,
+  UsersIcon,
   SettingsIcon,
   PlusIcon,
   UserIcon,
@@ -23,21 +23,21 @@ export interface NavigationSection {
 
 // Main navigation items
 export const MAIN_NAVIGATION: NavigationItem[] = [
-  { 
-    name: 'Dashboard', 
-    href: '/dashboard', 
+  {
+    name: 'Dashboard',
+    href: '/dashboard',
     icon: HomeIcon,
     description: 'Overview and statistics'
   },
-  { 
-    name: 'Tickets', 
-    href: '/dashboard/tickets', 
+  {
+    name: 'Tickets',
+    href: '/dashboard/tickets',
     icon: TicketIcon,
     description: 'Manage support tickets'
   },
-  { 
-    name: 'Members', 
-    href: '/dashboard/members', 
+  {
+    name: 'Members',
+    href: '/dashboard/members',
     icon: UsersIcon,
     description: 'Members management'
   },
@@ -45,9 +45,9 @@ export const MAIN_NAVIGATION: NavigationItem[] = [
 
 // Settings navigation items
 export const SETTINGS_NAVIGATION: NavigationItem[] = [
-  { 
-    name: 'Settings', 
-    href: '/dashboard/settings', 
+  {
+    name: 'Settings',
+    href: '/dashboard/settings',
     icon: SettingsIcon,
     description: 'Organization settings'
   },
@@ -108,12 +108,20 @@ export const buildHref = (baseHref: string, organizationSlug: string): string =>
 
 // Helper function to check if a navigation item is active
 export const isNavigationActive = (
-  itemHref: string, 
-  currentPath: string, 
+  itemHref: string,
+  currentPath: string,
   organizationSlug: string
 ): boolean => {
   const fullHref = buildHref(itemHref, organizationSlug)
-  return currentPath === fullHref || currentPath.startsWith(fullHref + '/')
+
+  // Exact match
+  if (currentPath === fullHref) return true
+
+  // For dashboard root, only match exact path, not sub-pages
+  if (itemHref === '/dashboard') return currentPath === fullHref
+
+  // For other paths, check if current path starts with the href
+  return currentPath.startsWith(fullHref + '/')
 }
 
 // Role-based navigation filtering
