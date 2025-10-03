@@ -4,6 +4,7 @@ import React from "react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { useTheme } from "@/components/branding/theme-provider"
+import { useTheme as useNextTheme } from "next-themes"
 
 interface BrandedLogoProps {
   size?: "sm" | "md" | "lg" | "xl"
@@ -33,6 +34,8 @@ export function BrandedLogo({
   helpOrbit = false,
 }: BrandedLogoProps) {
   const { organization, branding } = useTheme()
+  const { theme } = useNextTheme()
+
   const [imageError, setImageError] = React.useState(false)
 
   const logoUrl = helpOrbit
@@ -42,8 +45,8 @@ export function BrandedLogo({
   const altText = helpOrbit
     ? "HelpOrbit logo"
     : organization?.name
-    ? `${organization.name} logo`
-    : "HelpOrbit logo"
+      ? `${organization.name} logo`
+      : "HelpOrbit logo"
 
   React.useEffect(() => {
     setImageError(false)
@@ -64,8 +67,11 @@ export function BrandedLogo({
           src={logoUrl}
           alt={altText}
           fill
-          className="object-contain rounded-lg"
-          priority={size === "lg" || size === "xl"}
+          className={cn(
+            "object-contain rounded-lg",
+            logoUrl === "/logos/helporbit-logo.svg" && // only affect default logo
+            (theme === "dark" ? "invert" : "")
+          )} priority={size === "lg" || size === "xl"}
           onError={() => {
             setImageError(true)
             if (logoUrl !== "/logos/helporbit-logo.svg") {
@@ -136,8 +142,8 @@ export function BrandedTextLogo({
           {helpOrbit
             ? "Multi-tenant ticketing system"
             : organization
-            ? "Support Portal"
-            : "Multi-tenant ticketing system"}
+              ? "Support Portal"
+              : "Multi-tenant ticketing system"}
         </p>
       )}
     </div>
@@ -172,7 +178,7 @@ export function LogoWithText({
     "flex items-center",
     isVertical ? "flex-col space-y-2" : "flex-row space-x-3",
     interactive &&
-      "cursor-pointer transition-opacity hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 rounded-md",
+    "cursor-pointer transition-opacity hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 rounded-md",
     className
   )
 

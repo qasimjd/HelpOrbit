@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { signUpAction } from "@/server/actions/auth-actions"
 import { cn } from "@/lib/utils"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import SocialLoginButtons from "@/components/auth/social-login-buttons"
 
 interface SignUpFormProps {
@@ -36,6 +36,9 @@ export function SignUpForm({
     message: "",
   })
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const from = searchParams.get("from");
+
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -59,7 +62,7 @@ export function SignUpForm({
       if (result.success && result.redirectTo) {
         // Show success message briefly, then redirect
         await new Promise((resolve) => setTimeout(resolve, 2000))
-        router.push(result.redirectTo);
+        router.push(from ?? result.redirectTo);
       }
     } catch (error) {
       console.error('Form submission error:', error)
@@ -201,7 +204,7 @@ export function SignUpForm({
           <p>
             Already have an account?{" "}
             <Link
-              href="/login"
+              href={from ? `/login?from=${from}` : "/login"}
               className="font-medium text-primary hover:underline"
             >
               Sign in

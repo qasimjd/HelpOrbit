@@ -27,12 +27,12 @@ export default async function NewTicketPage({ params }: NewTicketPageProps) {
   }
 
   return (
-    <div className="p-6 mx-auto space-y-6">
+    <div className="mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Create New Ticket</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-3xl font-bold">Create New Ticket</h1>
+          <p className="text-muted-foreground mt-1">
             Submit a new support request or issue
           </p>
         </div>

@@ -46,7 +46,7 @@ const TicketCard = ({ticket, slug}: {ticket: TicketWithDetails, slug: string}) =
                             </Link>
                         </h3>
 
-                        <div className="flex flex-wrap items-center gap-6 text-sm text-gray-500">
+                        <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
                             <div className="flex items-center">
                                 <UserIcon className="w-4 h-4 mr-1" />
                                 {ticket.requester?.name || 'Unknown User'}
@@ -65,7 +65,7 @@ const TicketCard = ({ticket, slug}: {ticket: TicketWithDetails, slug: string}) =
                         {ticket.tags && ticket.tags.length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-3">
                                 {ticket.tags.map((tag: string) => (
-                                    <Badge key={tag} variant="secondary" className="text-xs">
+                                    <Badge key={tag} variant="secondary" className="text-xs text-foreground">
                                         {tag}
                                     </Badge>
                                 ))}

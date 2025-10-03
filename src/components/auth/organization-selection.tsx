@@ -69,7 +69,7 @@ export function OrganizationSelection({
                 href={`/org/${org.slug}/dashboard`}
                 key={org.id}
                 className={cn(
-                  "p-6 cursor-pointer transition-all border shadow-md hover:shadow-lg rounded-2xl flex-shrink-0 w-56",
+                  "bg-card p-6 cursor-pointer transition-all border shadow-md hover:shadow-lg rounded-2xl flex-shrink-0 w-56",
                 )}
               >
                 <div className="flex flex-col items-center space-y-3">

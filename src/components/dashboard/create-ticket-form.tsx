@@ -166,7 +166,7 @@ export function CreateTicketForm({ organizationSlug, organizationId, className }
 
           {/* Title */}
           <div className="space-y-2">
-            <Label htmlFor="title" className="text-sm font-medium text-gray-700">
+            <Label htmlFor="title" className="text-sm font-medium">
               Title *
             </Label>
             <Input
@@ -188,7 +188,7 @@ export function CreateTicketForm({ organizationSlug, organizationId, className }
 
           {/* Priority */}
           <div className="space-y-2">
-            <Label htmlFor="priority" className="text-sm font-medium text-gray-700">
+            <Label htmlFor="priority" className="text-sm font-medium">
               Priority *
             </Label>
             <Select 
@@ -237,7 +237,7 @@ export function CreateTicketForm({ organizationSlug, organizationId, className }
 
           {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="description" className="text-sm font-medium text-gray-700">
+            <Label htmlFor="description" className="text-sm font-medium">
               Description *
             </Label>
             <Textarea
@@ -263,7 +263,7 @@ export function CreateTicketForm({ organizationSlug, organizationId, className }
 
           {/* Tags */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-700">
+            <Label className="text-sm font-medium">
               Tags (Optional)
             </Label>
             <div className="space-y-2">
@@ -296,7 +296,7 @@ export function CreateTicketForm({ organizationSlug, organizationId, className }
                 </div>
               )}
               
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 Add relevant tags to help categorize your ticket (e.g., &quot;login&quot;, &quot;payment&quot;, &quot;bug&quot;)
               </p>
             </div>
