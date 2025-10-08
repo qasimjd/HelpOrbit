@@ -7,6 +7,8 @@ export interface Ticket {
   description?: string | null
   status: TicketStatus
   priority: TicketPriority
+  type: TicketType
+  dueDate?: Date | null
   tags?: string[] | null
   organizationId: string
   requesterId?: string | null
@@ -54,11 +56,15 @@ export interface TicketAttachment {
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type TicketStatus = 'open' | 'in_progress' | 'waiting_for_customer' | 'resolved' | 'closed'
 export type TicketPriority = 'low' | 'medium' | 'high' | 'urgent'
+export type TicketType = 'general' | 'bug' | 'feature_request' | 'support' | 'billing' | 'other'
 
 export interface CreateTicketData {
   title: string
   description?: string
   priority: TicketPriority
+  type: TicketType
+  assigneeId?: string | null
+  dueDate?: Date | null | undefined;
   tags?: string[]
   attachments?: File[]
 }
@@ -68,7 +74,9 @@ export interface UpdateTicketData {
   description?: string
   status?: TicketStatus
   priority?: TicketPriority
+  type?: TicketType
   assigneeId?: string | null
+  dueDate?: Date | null | undefined;
   tags?: string[]
   resolvedAt?: Date | null
 }
@@ -112,7 +120,7 @@ export interface TicketContextValue {
   currentTicket: TicketWithDetails | null
   isLoading: boolean
   error: string | null
-  
+
   // Actions
   fetchTickets: (filters?: TicketFilters) => Promise<void>
   fetchTicketStats: () => Promise<void>
@@ -123,7 +131,7 @@ export interface TicketContextValue {
   assignTicket: (ticketId: string, assigneeId: string | null) => Promise<Ticket | null>
   changeTicketStatus: (ticketId: string, status: TicketStatus) => Promise<Ticket | null>
   refreshData: (filters?: TicketFilters) => Promise<void>
-  
+
   // Setters
   setCurrentTicket: (ticket: TicketWithDetails | null) => void
   clearError: () => void

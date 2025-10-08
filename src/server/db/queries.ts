@@ -15,7 +15,10 @@ import type {
   UserRole, 
   TicketWithDetails, 
   TicketStats, 
-  TicketFilters 
+  TicketFilters, 
+  TicketType,
+  TicketPriority,
+  TicketStatus
 } from '@/types';
 import type { Organization } from '@/types/user';
 
@@ -218,10 +221,12 @@ export async function getTicketsByOrganization(
       description: ticket.description,
       status: ticket.status,
       priority: ticket.priority,
+      type: ticket.type,
       tags: ticket.tags,
       organizationId: ticket.organizationId,
       requesterId: ticket.requesterId,
       assigneeId: ticket.assigneeId,
+      dueDate: ticket.dueDate,
       createdAt: ticket.createdAt,
       updatedAt: ticket.updatedAt,
       resolvedAt: ticket.resolvedAt,
@@ -337,10 +342,12 @@ export async function getTicketById(ticketId: string, organizationId: string) {
       description: ticket.description,
       status: ticket.status,
       priority: ticket.priority,
+      type: ticket.type,
       tags: ticket.tags,
       organizationId: ticket.organizationId,
       requesterId: ticket.requesterId,
       assigneeId: ticket.assigneeId,
+      dueDate: ticket.dueDate,
       createdAt: ticket.createdAt,
       updatedAt: ticket.updatedAt,
       resolvedAt: ticket.resolvedAt,
@@ -469,8 +476,9 @@ export async function createTicket(ticketData: {
   id: string
   title: string
   description: string
-  status: 'open' | 'in_progress' | 'waiting_for_customer' | 'resolved' | 'closed'
-  priority: 'low' | 'medium' | 'high' | 'urgent'
+  status: TicketStatus
+  priority: TicketPriority
+  type: TicketType
   organizationId: string
   requesterId: string
   assigneeId?: string | null
@@ -484,6 +492,7 @@ export async function createTicket(ticketData: {
       description: ticketData.description,
       status: ticketData.status,
       priority: ticketData.priority,
+      type: ticketData.type,
       organizationId: ticketData.organizationId,
       requesterId: ticketData.requesterId,
       assigneeId: ticketData.assigneeId || null,
@@ -500,8 +509,10 @@ export async function updateTicket(
   updates: {
     title?: string
     description?: string
-    status?: 'open' | 'in_progress' | 'waiting_for_customer' | 'resolved' | 'closed'
-    priority?: 'low' | 'medium' | 'high' | 'urgent'
+    status?: TicketStatus
+    priority?: TicketPriority
+    type?: TicketType
+    dueDate?: Date | null
     assigneeId?: string | null
     tags?: string[] | null
     resolvedAt?: Date | null
@@ -511,10 +522,12 @@ export async function updateTicket(
     updatedAt: Date
     title?: string
     description?: string
-    status?: 'open' | 'in_progress' | 'waiting_for_customer' | 'resolved' | 'closed'
-    priority?: 'low' | 'medium' | 'high' | 'urgent'
+    status?: TicketStatus
+    priority?: TicketPriority
+    type?: TicketType
     assigneeId?: string | null
     tags?: string | null
+    dueDate?: Date | null
     resolvedAt?: Date | null
   } = { updatedAt: new Date() }
   
@@ -522,8 +535,10 @@ export async function updateTicket(
   if (updates.description !== undefined) updateData.description = updates.description
   if (updates.status !== undefined) updateData.status = updates.status
   if (updates.priority !== undefined) updateData.priority = updates.priority
+  if (updates.type !== undefined) updateData.type = updates.type
   if (updates.assigneeId !== undefined) updateData.assigneeId = updates.assigneeId
   if (updates.tags !== undefined) updateData.tags = stringifyTags(updates.tags)
+  if (updates.dueDate !== undefined) updateData.dueDate = updates.dueDate
   if (updates.resolvedAt !== undefined) updateData.resolvedAt = updates.resolvedAt
 
   const result = await db

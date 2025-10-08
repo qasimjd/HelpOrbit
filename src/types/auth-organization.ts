@@ -8,10 +8,10 @@ export interface OrganizationData {
   id: string;
   name: string;
   slug: string;
-  logo: string;
-  metadata?: Record<string, any>;
-  createdAt: Date;
-  updatedAt: Date;
+  logo?: string | null | undefined;
+  metadata?: Record<string, any> | null;
+  createdAt?: Date | undefined;
+  updatedAt?: Date | undefined;
 }
 
 export interface MemberData {

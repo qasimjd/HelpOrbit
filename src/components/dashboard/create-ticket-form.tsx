@@ -1,208 +1,248 @@
 "use client"
 
-import React, { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { 
+import React, { useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Badge } from '@/components/ui/badge'
-import { AlertCircle, X, CheckCircle } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { createTicketAction } from '@/server/actions/ticket-actions'
-import type { CreateTicketData, TicketPriority } from '@/types/ticket'
-import { Loading } from '@/components/sheard/loading'
+} from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { X, CalendarIcon } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { format } from "date-fns"
+import { cn } from "@/lib/utils"
+import { createTicketAction, updateTicketAction, getTicketByIdAction } from "@/server/actions/ticket-actions"
+import { Loading } from "@/components/sheard/loading"
+
+import { ticketSchema } from "@/schemas"
+import { toast } from "sonner"
+import { useEffect } from "react"
+import { UserRole } from "@/types"
+
+
+
+type TicketFormValues = z.infer<typeof ticketSchema>
 
 interface CreateTicketFormProps {
   organizationSlug: string
   organizationId: string
+  userRole?: UserRole
+  ticketId?: string // For edit mode
   className?: string
 }
 
-interface FormErrors {
-  title?: string[]
-  description?: string[]
-  priority?: string[]
-  general?: string
-}
-
-export function CreateTicketForm({ organizationSlug, organizationId, className }: CreateTicketFormProps) {
+export function CreateTicketForm({
+  organizationSlug,
+  organizationId,
+  userRole,
+  ticketId,
+  className,
+}: CreateTicketFormProps) {
+  const isEditMode = Boolean(ticketId)
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  
-  // Form state
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    priority: '' as TicketPriority | ''
-  })
-  
-  // UI state
+  const [isLoading, setIsLoading] = useState(isEditMode)
   const [tags, setTags] = useState<string[]>([])
-  const [tagInput, setTagInput] = useState('')
-  const [errors, setErrors] = useState<FormErrors>({})
-  const [successMessage, setSuccessMessage] = useState('')
+  const [tagInput, setTagInput] = useState("")
 
-  // Validation functions
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {}
+  const form = useForm<TicketFormValues>({
+    resolver: zodResolver(ticketSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      priority: "medium",
+      type: "general",
+      tags: [],
+    },
+  })
 
-    if (!formData.title.trim()) {
-      newErrors.title = ['Title is required']
-    } else if (formData.title.trim().length < 3) {
-      newErrors.title = ['Title must be at least 3 characters']
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    reset,
+    watch,
+    formState: { errors },
+  } = form
+
+  const dueDate = watch("dueDate")
+  const priority = watch("priority")
+  const type = watch("type")
+
+  // Fetch ticket data for edit mode
+  useEffect(() => {
+    if (isEditMode && ticketId) {
+      const fetchTicketData = async () => {
+        try {
+          setIsLoading(true)
+          const response = await getTicketByIdAction(ticketId, organizationId)
+          
+          if (response.success && response.data) {
+            const ticket = response.data
+            
+            // Populate form with existing ticket data
+            reset({
+              title: ticket.title,
+              description: ticket.description || "",
+              priority: ticket.priority,
+              type: ticket.type,
+              tags: ticket.tags || [],
+              dueDate: ticket.dueDate ? new Date(ticket.dueDate) : undefined,
+            })
+            
+            // Set tags state
+            setTags(ticket.tags || [])
+          } else {
+            toast.error("Failed to load ticket data")
+          }
+        } catch (error) {
+          console.error("Error fetching ticket:", error)
+          toast.error("Failed to load ticket data")
+        } finally {
+          setIsLoading(false)
+        }
+      }
+      
+      fetchTicketData()
     }
+  }, [isEditMode, ticketId, organizationId, reset])
 
-    if (!formData.description.trim()) {
-      newErrors.description = ['Description is required']
-    } else if (formData.description.trim().length < 10) {
-      newErrors.description = ['Description must be at least 10 characters']
+  // Clear due date if user doesn't have permission to set it
+  useEffect(() => {
+    if (userRole && userRole !== "admin" && userRole !== "owner") {
+      setValue("dueDate", undefined)
     }
+  }, [userRole, setValue])
 
-    if (!formData.priority) {
-      newErrors.priority = ['Priority is required']
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  // Form handlers
-  const handleInputChange = (field: keyof typeof formData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-    // Clear related error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }))
-    }
-  }
-
+  // Tags handlers
   const handleAddTag = (tag: string) => {
-    const trimmedTag = tag.trim().toLowerCase()
-    if (trimmedTag && !tags.includes(trimmedTag)) {
-      setTags([...tags, trimmedTag])
-      setTagInput('')
+    const trimmed = tag.trim().toLowerCase()
+    if (trimmed && !tags.includes(trimmed)) {
+      const newTags = [...tags, trimmed]
+      setTags(newTags)
+      setValue("tags", newTags)
+      setTagInput("")
     }
   }
 
   const handleRemoveTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove))
+    const newTags = tags.filter((t) => t !== tagToRemove)
+    setTags(newTags)
+    setValue("tags", newTags)
   }
 
   const handleTagInputKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && tagInput.trim()) {
+    if (e.key === "Enter" && tagInput.trim()) {
       e.preventDefault()
       handleAddTag(tagInput)
-    } else if (e.key === 'Backspace' && !tagInput && tags.length > 0) {
+    } else if (e.key === "Backspace" && !tagInput && tags.length > 0) {
       handleRemoveTag(tags[tags.length - 1])
     }
   }
 
   // Submit handler
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!validateForm()) {
-      return
-    }
-
-    const ticketData: CreateTicketData = {
-      title: formData.title.trim(),
-      description: formData.description.trim(),
-      priority: formData.priority as TicketPriority,
-      tags: tags.length > 0 ? tags : undefined
-    }
-
+  const onSubmit = async (data: TicketFormValues) => {
     startTransition(async () => {
       try {
-        const result = await createTicketAction(organizationId, ticketData)
+        let result
         
-        if (result.success) {
-          setSuccessMessage('Ticket created successfully!')
-          // Redirect to tickets page or the new ticket
-          setTimeout(() => {
-            router.push(`/org/${organizationSlug}/dashboard/tickets`)
-          }, 1500)
+        if (isEditMode && ticketId) {
+          // Update existing ticket
+          result = await updateTicketAction(ticketId, organizationId, { ...data })
+          if (result.success) {
+            toast.success("Ticket updated successfully!")
+            setTimeout(() => {
+              router.push(`/org/${organizationSlug}/dashboard/tickets`)
+            }, 2000)
+          }
         } else {
-          setErrors({ general: result.error || 'Failed to create ticket' })
+          // Create new ticket
+          result = await createTicketAction(organizationId, { ...data })
+          if (result.success) {
+            toast.success("Ticket created successfully!")
+            setTimeout(() => {
+              router.push(`/org/${organizationSlug}/dashboard/tickets`)
+            }, 2000)
+          }
         }
-      } catch (error) {
-        console.error('Error creating ticket:', error)
-        setErrors({ general: 'An unexpected error occurred. Please try again.' })
+      } catch {
+        const action = isEditMode ? "updating" : "creating"
+        toast.error(`There was an error ${action} the ticket. Please try again.`)
       }
     })
   }
 
+  // Show loading state when fetching ticket data in edit mode
+  if (isLoading) {
+    return (
+      <Card className={cn("shadow-sm border", className)}>
+        <CardContent className="flex items-center justify-center py-12 min-h-[60vh]">
+          <div className="flex items-center space-x-2">
+            <Loading text="Loading ticket data..." />
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
-    <Card className={cn("", className)}>
-      <CardHeader>
-        <CardTitle>Ticket Details</CardTitle>
+    <Card className={cn("shadow-sm border", className)}>
+      <CardHeader className="sr-only">
+        <CardTitle>
+          {isEditMode ? "Edit Ticket" : "Create New Ticket"}
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Success Message */}
-          {successMessage && (
-            <Alert>
-              <CheckCircle className="h-4 w-4" />
-              <AlertDescription>{successMessage}</AlertDescription>
-            </Alert>
-          )}
-
-          {/* Error Message */}
-          {errors.general && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{errors.general}</AlertDescription>
-            </Alert>
-          )}
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 
           {/* Title */}
           <div className="space-y-2">
-            <Label htmlFor="title" className="text-sm font-medium">
-              Title *
-            </Label>
+            <Label>Title *</Label>
             <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) => handleInputChange('title', e.target.value)}
+              {...register("title")}
               placeholder="Brief description of the issue"
-              className={cn(
-                "input-brand",
-                errors?.title && "border-red-500 focus:border-red-500"
-              )}
               disabled={isPending}
-              required
+              className={cn("input-brand", errors.title && "border-red-500")}
             />
-            {errors?.title && (
-              <p className="text-sm text-red-600">{errors.title[0]}</p>
+            {errors.title && (
+              <p className="text-sm text-red-600">{errors.title.message}</p>
             )}
           </div>
 
-          {/* Priority */}
-          <div className="space-y-2">
-            <Label htmlFor="priority" className="text-sm font-medium">
-              Priority *
-            </Label>
-            <Select 
-              value={formData.priority} 
-              onValueChange={(value) => handleInputChange('priority', value)}
-              disabled={isPending} 
-              required
-            >
-              <SelectTrigger className={cn(
-                "input-brand",
-                errors?.priority && "border-red-500 focus:border-red-500"
-              )}>
-                <SelectValue placeholder="Select priority level" />
-              </SelectTrigger>
+          {/* Priority + Type */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Priority */}
+            <div className="space-y-2">
+              <Label>Priority *</Label>
+              <Select
+                onValueChange={(v) =>
+                  setValue("priority", v as TicketFormValues["priority"])
+                }
+                value={priority || "medium"}
+                disabled={isPending}
+              >
+                <SelectTrigger
+                  className={cn("focus:border-brand-primary", errors.priority && "border-red-500")}
+                >
+                  <SelectValue placeholder="Select priority" />
+                </SelectTrigger>
               <SelectContent>
                 <SelectItem value="low">
                   <span className="flex items-center">
@@ -229,81 +269,159 @@ export function CreateTicketForm({ organizationSlug, organizationId, className }
                   </span>
                 </SelectItem>
               </SelectContent>
-            </Select>
-            {errors?.priority && (
-              <p className="text-sm text-red-600">{errors.priority[0]}</p>
-            )}
+              </Select>
+              {errors.priority && (
+                <p className="text-sm text-red-600">
+                  {errors.priority.message}
+                </p>
+              )}
+            </div>
+
+            {/* Type */}
+            <div className="space-y-2">
+              <Label>Type *</Label>
+              <Select
+                onValueChange={(v) =>
+                  setValue("type", v as TicketFormValues["type"])
+                }
+                value={type || "general"}
+                disabled={isPending}
+              >
+                <SelectTrigger
+                  className={cn(
+                    "focus-visible:border-brand-primary focus:border-brand-primary",
+                    errors.type && "border-red-500"
+                  )}
+                >
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                <SelectItem value="general">
+                  <span className="flex items-center">
+                    <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
+                    General
+                  </span>
+                </SelectItem>
+                  <SelectItem value="bug">
+                    <span className="flex items-center">
+                      <div className="w-2 h-2 rounded-full bg-red-500 mr-2"></div>
+                      Bug
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="feature_request">
+                    <span className="flex items-center">
+                      <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
+                      Feature Request
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="support">
+                    <span className="flex items-center">
+                      <div className="w-2 h-2 rounded-full bg-yellow-500 mr-2"></div>
+                      Support
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="billing">
+                    <span className="flex items-center">
+                      <div className="w-2 h-2 rounded-full bg-purple-500 mr-2"></div>
+                      Billing
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="other">
+                    <span className="flex items-center">
+                      <div className="w-2 h-2 rounded-full bg-gray-500 mr-2"></div>
+                      Other
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.type && (
+                <p className="text-sm text-red-600">{errors.type.message}</p>
+              )}
+            </div>
           </div>
 
           {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="description" className="text-sm font-medium">
-              Description *
-            </Label>
+            <Label>Description *</Label>
             <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-              placeholder="Provide detailed information about the issue, including steps to reproduce, error messages, and any relevant context..."
+              {...register("description")}
+              placeholder="Provide details, steps to reproduce, error messages, etc."
               rows={6}
-              className={cn(
-                "input-brand resize-none",
-                errors?.description && "border-red-500 focus:border-red-500"
-              )}
               disabled={isPending}
-              required
+              className={cn("resize-none input-brand", errors.description && "border-red-500")}
             />
-            {errors?.description && (
-              <p className="text-sm text-red-600">{errors.description[0]}</p>
+            {errors.description && (
+              <p className="text-sm text-red-600">
+                {errors.description.message}
+              </p>
             )}
-            <p className="text-xs text-gray-500">
-              Minimum 10 characters. Be as detailed as possible to help us resolve your issue faster.
-            </p>
           </div>
+
+          {/* Due Date - Only show for admin and owner roles */}
+          {userRole && (userRole === "admin" || userRole === "owner") && (
+            <div className="space-y-2">
+              <Label>Due Date (optional)</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    disabled={isPending || isLoading}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !dueDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4 text-brand-primary" />
+                    {dueDate ? format(dueDate, "PPP") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dueDate}
+                    onSelect={(d) => setValue("dueDate", d ?? undefined)}
+                    disabled={isPending || isLoading}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
 
           {/* Tags */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium">
-              Tags (Optional)
-            </Label>
-            <div className="space-y-2">
-              {/* Tag Input */}
-              <Input
-                placeholder="Add tags (press Enter to add)"
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={handleTagInputKeyDown}
-                className="input-brand"
-                disabled={isPending}
-              />
-              
-              {/* Tags Display */}
-              {tags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {tags.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="flex items-center gap-1">
-                      {tag}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTag(tag)}
-                        className="text-gray-500 hover:text-gray-700"
-                        disabled={isPending}
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              )}
-              
-              <p className="text-xs text-muted-foreground">
-                Add relevant tags to help categorize your ticket (e.g., &quot;login&quot;, &quot;payment&quot;, &quot;bug&quot;)
-              </p>
-            </div>
+            <Label>Tags</Label>
+            <Input
+              placeholder="Add tags (press Enter)"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={handleTagInputKeyDown}
+              disabled={isPending}
+              className="input-brand"
+            />
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {tags.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="flex items-center gap-1"
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTag(tag)}
+                      disabled={isPending}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Submit Button */}
-          <div className="flex justify-end space-x-4 pt-4 border-t">
+          {/* Actions */}
+          <div className="flex justify-end space-x-4 pt-6 border-t">
             <Button
               type="button"
               variant="outline"
@@ -314,16 +432,15 @@ export function CreateTicketForm({ organizationSlug, organizationId, className }
             </Button>
             <Button
               type="submit"
-              disabled={isPending}
-              className="btn-brand-primary min-w-[120px]"
+              disabled={isPending || isLoading}
+              className="btn-brand-primary min-w-[140px]"
             >
               {isPending ? (
                 <>
-                  <Loading size='sm' />
-                  Creating...
+                  <Loading size="sm" /> {isEditMode ? "Updating..." : "Creating..."}
                 </>
               ) : (
-                'Create Ticket'
+                isEditMode ? "Update Ticket" : "Create Ticket"
               )}
             </Button>
           </div>

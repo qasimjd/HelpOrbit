@@ -21,8 +21,15 @@ import type {
   CreateTicketData, 
   UpdateTicketData,
   TicketFilters,
-  ApiResponse
+  ApiResponse,
+  TicketPriority,
+  TicketType
 } from '@/types'
+
+// Define valid values for validation
+const VALID_PRIORITIES: TicketPriority[] = ['low', 'medium', 'high', 'urgent']
+const VALID_TYPES: TicketType[] = ['general', 'bug', 'feature_request', 'support', 'billing', 'other']
+
 
 /**
  * Get tickets for an organization with optional filters and caching
@@ -247,10 +254,17 @@ export async function createTicketAction(
       }
     }
 
-    if (!ticketData.priority || !['low', 'medium', 'high', 'urgent'].includes(ticketData.priority)) {
+    if (!VALID_PRIORITIES.includes(ticketData.priority)) {
       return {
         success: false,
         error: 'Valid priority is required'
+      }
+    }
+
+    if (!VALID_TYPES.includes(ticketData.type)) {
+      return {
+        success: false,
+        error: 'Valid type is required'
       }
     }
 
@@ -263,7 +277,9 @@ export async function createTicketAction(
       title: ticketData.title.trim(),
       description: ticketData.description.trim(),
       priority: ticketData.priority,
+      type: ticketData.type,
       tags: ticketData.tags && ticketData.tags.length > 0 ? ticketData.tags : null,
+      dueDate: ticketData.dueDate || null,
       organizationId,
       requesterId: userId,
       assigneeId: null, // Will be assigned later
@@ -341,11 +357,13 @@ export async function updateTicketAction(
     }
 
     // Prepare update data
-    const updateData: any = {}
+    const updateData: UpdateTicketData = {}
     if (updates.title !== undefined) updateData.title = updates.title.trim()
     if (updates.description !== undefined) updateData.description = updates.description.trim()
     if (updates.status !== undefined) updateData.status = updates.status
     if (updates.priority !== undefined) updateData.priority = updates.priority
+    if (updates.type !== undefined) updateData.type = updates.type
+    if (updates.dueDate !== undefined) updateData.dueDate = updates.dueDate
     if (updates.assigneeId !== undefined) updateData.assigneeId = updates.assigneeId
     if (updates.tags !== undefined) updateData.tags = updates.tags
     if (updates.status === 'resolved') updateData.resolvedAt = new Date()
@@ -432,7 +450,19 @@ export async function assignTicketAction(
   assigneeId: string | null
 ): Promise<ApiResponse<Ticket>> {
   try {
-    return await updateTicketAction(ticketId, organizationId, { assigneeId })
+    // Get the current ticket to preserve its type
+    const currentTicket = await getTicketByIdAction(ticketId, organizationId)
+    if (!currentTicket.success || !currentTicket.data) {
+      return {
+        success: false,
+        error: 'Ticket not found'
+      }
+    }
+    
+    return await updateTicketAction(ticketId, organizationId, { 
+      assigneeId,
+      type: currentTicket.data.type
+    })
   } catch (error) {
     console.error('Error in assignTicketAction:', error)
     return {
@@ -449,7 +479,19 @@ export async function changeTicketStatusAction(
   status: Ticket['status']
 ): Promise<ApiResponse<Ticket>> {
   try {
-    return await updateTicketAction(ticketId, organizationId, { status })
+    // Get the current ticket to preserve its type
+    const currentTicket = await getTicketByIdAction(ticketId, organizationId)
+    if (!currentTicket.success || !currentTicket.data) {
+      return {
+        success: false,
+        error: 'Ticket not found'
+      }
+    }
+    
+    return await updateTicketAction(ticketId, organizationId, { 
+      status,
+      type: currentTicket.data.type
+    })
   } catch (error) {
     console.error('Error in changeTicketStatusAction:', error)
     return {

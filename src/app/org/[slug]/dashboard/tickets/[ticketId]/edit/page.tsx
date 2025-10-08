@@ -8,17 +8,17 @@ import { getOrganizationBySlug } from '@/server/db/queries'
 import { getUserRoleAction } from '@/server/actions/user-actions'
 import { notFound } from 'next/navigation'
 
-interface NewTicketPageProps {
-  params: Promise<{ slug: string }>
+interface EditTicketPageProps {
+  params: Promise<{ slug: string; ticketId: string }>
 }
 
 export const metadata: Metadata = {
-  title: 'Create New Ticket - HelpOrbit',
-  description: 'Create a new support ticket',
+  title: 'Edit Ticket - HelpOrbit',
+  description: 'Edit an existing support ticket',
 }
 
-export default async function NewTicketPage({ params }: NewTicketPageProps) {
-  const { slug } = await params
+export default async function EditTicketPage({ params }: EditTicketPageProps) {
+  const { slug, ticketId } = await params
   
   // Get organization data
   const organization = await getOrganizationBySlug(slug)
@@ -36,9 +36,9 @@ export default async function NewTicketPage({ params }: NewTicketPageProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Create New Ticket</h1>
+          <h1 className="text-2xl font-bold">Edit Ticket</h1>
           <p className="text-muted-foreground mt-1">
-            Submit a new support request or issue
+            Edit details for ticket #{ticketId}
           </p>
         </div>
         <Button variant="outline" asChild>
@@ -54,6 +54,7 @@ export default async function NewTicketPage({ params }: NewTicketPageProps) {
         organizationSlug={slug} 
         organizationId={organization.id}
         userRole={userRole}
+        ticketId={ticketId}
       />
     </div>
   )

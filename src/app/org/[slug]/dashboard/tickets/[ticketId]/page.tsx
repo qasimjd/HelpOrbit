@@ -17,6 +17,7 @@ import {
   formatPriorityText,
   formatRelativeDate
 } from '@/lib/ticket-utils'
+import TicketActionCard from '@/components/sheard/ticket-action-card'
 
 interface TicketDetailPageProps {
   params: Promise<{ slug: string; ticketId: string }>
@@ -67,13 +68,13 @@ export default async function TicketDetailPage({ params }: TicketDetailPageProps
   const tags = ticket.tags || []
 
   return (
-    <div className="p-6 mx-auto space-y-6">
+    <div className="mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <div>
             <div className="flex items-center space-x-3">
-              <h1 className="text-2xl font-bol">
+              <h1 className="text-2xl font-bold">
                 #{ticket.id}
               </h1>
               <Badge
@@ -149,9 +150,9 @@ export default async function TicketDetailPage({ params }: TicketDetailPageProps
                   <User className="w-4 h-4 mr-2" />
                   Requester
                 </span>
-                <span className="font-medium">
+                <Link href={`/org/${slug}/dashboard/users/${ticket.requester?.id}`} className="font-medium">
                   {ticket.requester?.name || 'Unknown User'}
-                </span>
+                </Link>
               </div>
 
               <Separator />
@@ -161,9 +162,13 @@ export default async function TicketDetailPage({ params }: TicketDetailPageProps
                   <Clock className="w-4 h-4 mr-2" />
                   Assignee
                 </span>
-                <span className="font-medium">
-                  {ticket.assignee ? 'Assigned' : 'Unassigned'}
-                </span>
+                {ticket.assignee ? (
+                  <Link href={`/org/${slug}/dashboard/users/${ticket.assignee.id}`} className="font-medium">
+                    {ticket.assignee.id || 'Assigned'}
+                  </Link>
+                ) : (
+                  <span className="font-medium">Unassigned</span>
+                )}
               </div>
 
               <Separator />
@@ -232,22 +237,8 @@ export default async function TicketDetailPage({ params }: TicketDetailPageProps
           )}
 
           {/* Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button variant="outline" size="sm" className="w-full">
-                Edit Ticket
-              </Button>
-              <Button variant="outline" size="sm" className="w-full">
-                Change Status
-              </Button>
-              <Button variant="outline" size="sm" className="w-full">
-                Assign Ticket
-              </Button>
-            </CardContent>
-          </Card>
+          <TicketActionCard slug={slug} ticketId={ticket.id} />
+
         </div>
       </div>
     </div>

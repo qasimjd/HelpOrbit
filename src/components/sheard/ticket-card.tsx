@@ -4,7 +4,9 @@ import {
   getPriorityColor,
   formatTicketDate,
   formatStatusText,
-  formatPriorityText
+  formatPriorityText,
+  formatTypeText,
+  getTypeColor
 } from '@/lib/ticket-utils'
 import { Card, CardContent } from '@/components/ui/card'
 import Link from 'next/link'
@@ -38,9 +40,15 @@ const TicketCard = ({ticket, slug}: {ticket: TicketWithDetails, slug: string}) =
                             >
                                 {formatPriorityText(ticket.priority)}
                             </Badge>
+                            <Badge
+                                variant="secondary"
+                                className={getTypeColor(ticket.type)}
+                            >
+                                {formatTypeText(ticket.type)}
+                            </Badge>
                         </div>
 
-                        <h3 className="text-gray-900 font-medium mb-3 hover:text-brand-primary">
+                        <h3 className="font-medium mb-3 hover:text-brand-primary">
                             <Link href={`/org/${slug}/dashboard/tickets/${ticket.id}`}>
                                 {ticket.title}
                             </Link>

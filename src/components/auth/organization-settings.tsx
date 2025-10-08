@@ -204,7 +204,7 @@ export function OrganizationSettings({
     <>
       <div className="space-y-6">
         <Card>
-          <CardHeader>
+          <CardHeader className="sr-only">
             <CardTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
               Organization Settings

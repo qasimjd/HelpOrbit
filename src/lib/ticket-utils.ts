@@ -1,4 +1,4 @@
-import type { TicketStatus, TicketPriority } from '@/types/ticket'
+import type { TicketStatus, TicketPriority, TicketType } from '@/types/ticket'
 
 /**
  * Status color mappings for ticket status badges
@@ -9,6 +9,18 @@ export const statusColors = {
   waiting_for_customer: 'bg-purple-100 text-purple-800',
   resolved: 'bg-green-100 text-green-800',
   closed: 'bg-gray-100 text-gray-800'
+} as const
+
+/**
+ * Type color mappings for ticket type badges
+ */
+export const typeColors = {
+  general: 'bg-blue-100 text-blue-800',
+  bug: 'bg-red-100 text-red-800',
+  feature_request: 'bg-yellow-100 text-yellow-800',
+  support: 'bg-green-100 text-green-800',
+  billing: 'bg-purple-100 text-purple-800',
+  other: 'bg-gray-100 text-gray-800'
 } as const
 
 /**
@@ -26,6 +38,13 @@ export const priorityColors = {
  */
 export function getStatusColor(status: TicketStatus): string {
   return statusColors[status] || statusColors.open
+}
+
+/**
+ * Get CSS classes for ticket status badge
+ */
+export function getTypeColor(type: TicketType): string {
+  return typeColors[type] || typeColors.bug
 }
 
 /**
@@ -84,6 +103,13 @@ export function formatRelativeDate(dateString: string | Date): string {
  */
 export function formatStatusText(status: TicketStatus): string {
   return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+}
+
+/**
+ * Format status text for display (replace underscores with spaces and capitalize)
+ */
+export function formatTypeText(type: TicketType): string {
+  return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
 }
 
 /**

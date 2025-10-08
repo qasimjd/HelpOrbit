@@ -65,7 +65,7 @@ export default async function TicketsPage({ params }: TicketsPageProps) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Tickets</h1>
-          <p className="text-foreground mt-1">
+          <p className="text-muted-foreground mt-1">
             Manage and track all support tickets
           </p>
         </div>
@@ -91,7 +91,7 @@ export default async function TicketsPage({ params }: TicketsPageProps) {
 
           {/* Status Filter */}
           <Select>
-            <SelectTrigger className="w-full md:w-[180px]">
+            <SelectTrigger className="w-full md:w-[120px]">
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>
             <SelectContent>
@@ -106,7 +106,7 @@ export default async function TicketsPage({ params }: TicketsPageProps) {
 
           {/* Priority Filter */}
           <Select>
-            <SelectTrigger className="w-full md:w-[180px]">
+            <SelectTrigger className="w-full md:w-[120px]">
               <SelectValue placeholder="All Priorities" />
             </SelectTrigger>
             <SelectContent>
@@ -117,6 +117,22 @@ export default async function TicketsPage({ params }: TicketsPageProps) {
               <SelectItem value="low">Low</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* Type Filter */}
+            <Select>
+            <SelectTrigger className="w-full md:w-[120px]">
+              <SelectValue placeholder="All Types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="general">General</SelectItem>
+              <SelectItem value="bug">Bug</SelectItem>
+              <SelectItem value="feature_request">Feature Request</SelectItem>
+              <SelectItem value="support">Support</SelectItem>
+              <SelectItem value="billing">Billing</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
+            </SelectContent>
+            </Select>
 
           <Button variant="outline" size="sm">
             <FilterIcon className="w-4 h-4 mr-2" />

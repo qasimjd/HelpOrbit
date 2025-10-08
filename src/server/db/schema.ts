@@ -6,6 +6,7 @@ export const memberRoleEnum = pgEnum("member_role", ["owner", "admin", "member",
 export const invitationStatusEnum = pgEnum("invitation_status", ["pending", "accepted", "rejected", "cancelled"]);
 export const ticketStatusEnum = pgEnum("ticket_status", ["open", "in_progress", "waiting_for_customer", "resolved", "closed"]);
 export const ticketPriorityEnum = pgEnum("ticket_priority", ["low", "medium", "high", "urgent"]);
+export const ticketTypeEnum = pgEnum("ticket_type", ["general", "bug", "feature_request", "support", "billing", "other"]);
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -134,6 +135,7 @@ export const ticket = pgTable("ticket", {
   description: text("description").notNull(),
   status: ticketStatusEnum("status").default("open").notNull(),
   priority: ticketPriorityEnum("priority").default("medium").notNull(),
+  type: ticketTypeEnum("type").default("general").notNull(),
   organizationId: text("organization_id")
     .notNull()
     .references(() => organization.id, { onDelete: "cascade" }),
@@ -148,6 +150,7 @@ export const ticket = pgTable("ticket", {
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
+  dueDate: timestamp("due_date"),
   resolvedAt: timestamp("resolved_at"),
 });
 
