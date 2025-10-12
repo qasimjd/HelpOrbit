@@ -10,11 +10,13 @@ import {
     verification,
     organization as organizationTable,
     member,
-    invitation
+    invitation,
+    organizationRole
 } from "@/server/db/schema";
 import { sendEmailVerification, sendPasswordReset, sendOrganizationInvitation } from "@/lib/emails";
 import { createAuthMiddleware, APIError } from "better-auth/api";
 import { passwordSchema } from "@/schemas";
+import { ac, roles } from "@/lib/permissions";
 
 
 
@@ -79,7 +81,8 @@ export const auth = betterAuth({
             verification,
             organization: organizationTable,
             member,
-            invitation
+            invitation,
+            organizationRole
         },
     }),
     plugins: [
@@ -88,6 +91,12 @@ export const auth = betterAuth({
             organizationLimit: 5,
             membershipLimit: 100,
             invitationExpiresIn: 60 * 60 * 48, // 48 hours
+            ac, // Access control configuration
+            roles, // Custom roles with permissions
+            dynamicAccessControl: {
+                enabled: true,
+                maximumRolesPerOrganization: 20, // Allow custom roles per organization
+            },
             sendInvitationEmail: async (data) => {
                 const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/org/${data.organization.slug}/accept-invitation/${data.id}`;
 

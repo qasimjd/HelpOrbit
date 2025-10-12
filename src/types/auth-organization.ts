@@ -69,6 +69,11 @@ export interface MemberListResponse {
 export interface InvitationListResponse {
   invitations: InvitationData[];
   count: number;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+  };
 }
 
 // Server Action input types

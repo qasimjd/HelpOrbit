@@ -216,13 +216,20 @@ export async function getInvitationAction(
  * List invitations for an organization
  */
 export async function listInvitationsAction(
-  organizationId?: string
+  input?: {
+    organizationId?: string;
+    limit?: number;
+    offset?: number;
+    sortBy?: string;
+    sortDirection?: "asc" | "desc";
+    status?: "pending" | "accepted" | "rejected" | "cancelled";
+  }
 ): Promise<ActionResponse<InvitationListResponse>> {
   try {
-    const validatedInput = listInvitationsSchema.parse({ organizationId });
+    const validatedInput = listInvitationsSchema.parse(input || {});
 
     const result = await auth.api.listInvitations({
-      query: validatedInput.organizationId ? { organizationId: validatedInput.organizationId } : {},
+      query: validatedInput,
       headers: await headers(),
     });
 
@@ -233,13 +240,20 @@ export async function listInvitationsAction(
       };
     }
 
+    // Handle array response or paginated response
     const invitations = Array.isArray(result) ? result : (result as any)?.invitations || [];
+    const count = Array.isArray(result) ? result.length : (result as any)?.total || invitations.length;
 
     return {
       success: true,
       data: {
         invitations: invitations as InvitationData[],
-        count: invitations.length,
+        count,
+        pagination: validatedInput.limit ? {
+          page: Math.floor(validatedInput.offset / validatedInput.limit) + 1,
+          limit: validatedInput.limit,
+          total: count,
+        } : undefined,
       },
     };
   } catch (error) {

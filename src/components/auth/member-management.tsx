@@ -5,11 +5,9 @@ import {
   Users, 
   MoreHorizontal, 
   UserPlus, 
-  Shield, 
-  ShieldCheck, 
-  Crown,
   Trash2,
-  RefreshCw
+  RefreshCw,
+  Mail
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +28,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -56,40 +70,67 @@ import {
 } from "@/server/actions/member-actions";
 import type { MemberData, MemberRole } from "@/types/auth-organization";
 import { useToast } from "@/hooks/use-toast";
+import { getUserRoleColor, userRoleIcons } from "@/lib/utils";
+import { useSession } from "@/lib/auth-client";
+import { Loading } from "../sheard/loading";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { inviteMemberAction } from "@/server/actions/invitation-actions";
+
+const inviteFormSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  role: z.enum(["owner", "admin", "member", "guest"]),
+});
+
+type InviteFormData = z.infer<typeof inviteFormSchema>;
+
+interface MemberPermissions {
+  canManageMembers: boolean;
+  canRemoveMembers: boolean;
+  canUpdateRoles: boolean;
+  canInviteMembers: boolean;
+}
 
 interface MemberManagementProps {
   organizationId: string;
-  currentUserRole: MemberRole;
-  onInviteClick?: () => void;
+  initialData?: MemberData[];
+  initialPermissions?: MemberPermissions;
+  currentUserId?: string;
 }
 
-const roleIcons = {
-  owner: Crown,
-  admin: ShieldCheck,
-  member: Shield,
-  guest: Users,
-};
 
-const roleColors = {
-  owner: "bg-purple-100 text-purple-800 border-purple-300",
-  admin: "bg-blue-100 text-blue-800 border-blue-300", 
-  member: "bg-green-100 text-green-800 border-green-300",
-  guest: "bg-gray-100 text-gray-800 border-gray-300",
+// Default permissions object to prevent re-renders
+const DEFAULT_PERMISSIONS = {
+  canManageMembers: false,
+  canRemoveMembers: false,
+  canUpdateRoles: false,
+  canInviteMembers: false,
 };
 
 export function MemberManagement({ 
   organizationId, 
-  currentUserRole, 
-  onInviteClick 
+  initialData = [],
+  initialPermissions,
+  currentUserId
 }: MemberManagementProps) {
   const { toast } = useToast();
-  const [members, setMembers] = useState<MemberData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: session } = useSession();
+  
+  // Simple state - start with initial data if provided
+  const [members, setMembers] = useState<MemberData[]>(initialData);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [memberToRemove, setMemberToRemove] = useState<MemberData | null>(null);
   const [updatingRole, setUpdatingRole] = useState<string | null>(null);
+  const [permissions] = useState(initialPermissions || DEFAULT_PERMISSIONS);
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
 
-  const loadMembers = useCallback(async () => {
+  // Simple refresh function
+  const refreshMembers = useCallback(async () => {
+    if (!organizationId) return;
+    
+    setLoading(true);
     try {
       const result = await listMembersAction({ organizationId });
       if (result.success && result.data) {
@@ -106,20 +147,25 @@ export function MemberManagement({
     }
   }, [organizationId, toast]);
 
+  // Load data only if we don't have initial data
   useEffect(() => {
-    loadMembers();
-  }, [loadMembers]);
+    if (initialData?.length === 0) {
+      refreshMembers();
+    }
+  }, [initialData?.length, refreshMembers]); // Include dependencies
 
-  const canManageMembers = currentUserRole === "owner" || currentUserRole === "admin";
-  const canRemoveMembers = currentUserRole === "owner" || currentUserRole === "admin";
-  const canUpdateRoles = currentUserRole === "owner";
+  // Handle successful invitation
+  const handleInviteSuccess = () => {
+    // Refresh members list to show any new data
+    refreshMembers();
+  };
 
   const handleRemoveMember = async () => {
-    if (!memberToRemove || !canRemoveMembers) return;
+    if (!memberToRemove || !permissions.canRemoveMembers || !organizationId) return;
 
     try {
       const result = await removeMemberAction({
-        organizationId,
+        organizationId: organizationId,
         memberIdOrEmail: memberToRemove.id,
       });
 
@@ -148,12 +194,12 @@ export function MemberManagement({
   };
 
   const handleRoleUpdate = async (memberId: string, newRole: MemberRole) => {
-    if (!canUpdateRoles) return;
+    if (!permissions.canUpdateRoles || !organizationId) return;
 
     setUpdatingRole(memberId);
     try {
       const result = await updateMemberRoleAction({
-        organizationId,
+        organizationId: organizationId,
         memberId,
         role: newRole,
       });
@@ -202,11 +248,14 @@ export function MemberManagement({
 
   const getRoleSelectItems = (currentRole: MemberRole) => {
     const roles: MemberRole[] = ["guest", "member", "admin"];
-    if (currentUserRole === "owner") {
+    // Only owners can assign owner role
+    if (permissions.canUpdateRoles) {
       roles.push("owner");
     }
     return roles.filter(role => role !== currentRole);
   };
+
+
 
   if (loading) {
     return (
@@ -219,7 +268,7 @@ export function MemberManagement({
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8">
-            <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+            <Loading />
           </div>
         </CardContent>
       </Card>
@@ -235,12 +284,27 @@ export function MemberManagement({
               <Users className="h-5 w-5" />
               Members ({members.length})
             </CardTitle>
-            {canManageMembers && (
-              <Button onClick={onInviteClick} className="flex items-center gap-2">
-                <UserPlus className="h-4 w-4" />
-                Invite Members
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={refreshMembers}
+                disabled={loading}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
               </Button>
-            )}
+              {permissions.canInviteMembers && (
+                <Button 
+                  onClick={() => setShowInviteDialog(true)} 
+                  className="flex items-center gap-2 btn-brand-primary"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Invite Members
+                </Button>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -265,8 +329,8 @@ export function MemberManagement({
               </TableHeader>
               <TableBody>
                 {filteredMembers.map((member) => {
-                  const RoleIcon = roleIcons[member.role];
-                  const isCurrentUser = member.userId === member.user?.id; // This would need actual current user check
+                  const RoleIcon = userRoleIcons[member.role];
+                  const isCurrentUser = member.userId === (currentUserId || session?.user?.id);
 
                   return (
                     <TableRow key={member.id}>
@@ -287,7 +351,7 @@ export function MemberManagement({
                         </div>
                       </TableCell>
                       <TableCell>
-                        {canUpdateRoles && !isCurrentUser ? (
+                        {permissions.canUpdateRoles && !isCurrentUser ? (
                           <Select
                             value={member.role}
                             onValueChange={(newRole: MemberRole) => 
@@ -302,7 +366,7 @@ export function MemberManagement({
                               {getRoleSelectItems(member.role).map((role) => (
                                 <SelectItem key={role} value={role}>
                                   <div className="flex items-center gap-2">
-                                    <Badge variant="outline" className={roleColors[role]}>
+                                    <Badge variant="outline" className={getUserRoleColor(role)}>
                                       {role}
                                     </Badge>
                                   </div>
@@ -311,9 +375,9 @@ export function MemberManagement({
                             </SelectContent>
                           </Select>
                         ) : (
-                          <Badge 
-                            variant="outline" 
-                            className={`${roleColors[member.role]} flex items-center gap-1 w-fit`}
+                          <Badge
+                            variant="outline"
+                            className={`${getUserRoleColor(member.role)} flex items-center gap-1 w-fit`}
                           >
                             <RoleIcon className="h-3 w-3" />
                             {member.role}
@@ -324,7 +388,7 @@ export function MemberManagement({
                         {new Date(member.createdAt).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
-                        {canRemoveMembers && !isCurrentUser && (
+                        {permissions.canRemoveMembers && !isCurrentUser && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="sm">
@@ -383,6 +447,154 @@ export function MemberManagement({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Invite Member Dialog */}
+      <InviteMemberDialog
+        open={showInviteDialog}
+        onOpenChange={setShowInviteDialog}
+        organizationId={organizationId}
+        onSuccess={handleInviteSuccess}
+      />
     </>
+  );
+}
+
+// Inline Invite Dialog Component
+function InviteMemberDialog({ 
+  open, 
+  onOpenChange, 
+  organizationId, 
+  onSuccess 
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  organizationId?: string;
+  onSuccess?: () => void;
+}) {
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const form = useForm<InviteFormData>({
+    resolver: zodResolver(inviteFormSchema),
+    defaultValues: {
+      email: "",
+      role: "member",
+    },
+  });
+
+  const onSubmit = async (data: InviteFormData) => {
+    if (!organizationId) return;
+    
+    setIsSubmitting(true);
+    try {
+      const result = await inviteMemberAction({
+        organizationId: organizationId,
+        email: data.email,
+        role: data.role,
+      });
+
+      if (result.success) {
+        toast({
+          title: "Invitation Sent",
+          description: `Invitation sent to ${data.email}`,
+        });
+        form.reset();
+        onSuccess?.();
+        onOpenChange(false);
+      } else {
+        form.setError("root", {
+          message: result.error || "Failed to send invitation",
+        });
+      }
+    } catch {
+      form.setError("root", {
+        message: "An unexpected error occurred",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Mail className="h-5 w-5" />
+            Invite Member
+          </DialogTitle>
+          <DialogDescription>
+            Send an invitation to join your organization.
+          </DialogDescription>
+        </DialogHeader>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email Address</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter email address"
+                      {...field}
+                      disabled={isSubmitting}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Role</FormLabel>
+                  <FormControl>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="guest">Guest</SelectItem>
+                        <SelectItem value="member">Member</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="owner">Owner</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {form.formState.errors.root && (
+              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+                {form.formState.errors.root.message}
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+                Send Invitation
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 }

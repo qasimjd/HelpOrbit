@@ -1,7 +1,7 @@
 import React, { useMemo } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { cn, getInitials, getRoleColor } from "@/lib/utils"
+import { cn, getInitials, getUserRoleColor } from "@/lib/utils"
 import { OrganizationData, MemberRole } from "@/types/auth-organization"
 import { CreateOrganizationCard } from "@/components/auth/create-organization-card"
 import Link from "next/link"
@@ -91,7 +91,7 @@ export function OrganizationSelection({
                     variant="outline"
                     className={cn(
                       "text-xs px-2 py-0.5",
-                      getRoleColor(org.role)
+                      getUserRoleColor(org.role)
                     )}
                   >
                     {org.role}

@@ -114,13 +114,28 @@ export const invitation = pgTable("invitation", {
   email: text("email").notNull(),
   inviterId: text("inviter_id")
     .notNull()
-    .references(() => member.id, { onDelete: "cascade" }),
+    .references(() => user.id, { onDelete: "cascade" }),
   organizationId: text("organization_id")
     .notNull()
     .references(() => organization.id, { onDelete: "cascade" }),
   role: memberRoleEnum("role").default("member").notNull(),
   status: invitationStatusEnum("status").default("pending").notNull(),
   expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+});
+
+export const organizationRole = pgTable("organization_role", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  permissions: text("permissions").notNull(), // JSON string of permissions
+  organizationId: text("organization_id")
+    .notNull()
+    .references(() => organization.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

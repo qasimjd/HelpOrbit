@@ -1,12 +1,13 @@
 import { MemberRole } from "@/types/auth-organization"
 import { clsx, type ClassValue } from "clsx"
+import { CheckCircle, Clock, Crown, Shield, ShieldCheck, Users, XCircle } from "lucide-react"
 import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export const getRoleColor = (role: MemberRole) => {
+export const getUserRoleColor = (role: MemberRole) => {
   switch (role) {
     case 'owner':
       return 'bg-purple-100 text-purple-800 border-purple-200'
@@ -20,6 +21,14 @@ export const getRoleColor = (role: MemberRole) => {
       return 'bg-gray-100 text-gray-800 border-gray-200'
   }
 }
+
+export const userRoleIcons = {
+  owner: Crown,
+  admin: ShieldCheck,
+  member: Shield,
+  guest: Users,
+};
+
 
 export const getInitials = (name: string) => {
   return name
@@ -84,3 +93,18 @@ export function generateId(): string {
   crypto.getRandomValues(array)
   return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
 }
+
+
+export const inviteStatusColors = {
+  pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
+  accepted: "bg-green-100 text-green-800 border-green-300",
+  rejected: "bg-red-100 text-red-800 border-red-300",
+  cancelled: "bg-gray-100 text-gray-800 border-gray-300",
+};
+
+export const inviteStatusIcons = {
+  pending: Clock,
+  accepted: CheckCircle,
+  rejected: XCircle,
+  cancelled: XCircle,
+}; 

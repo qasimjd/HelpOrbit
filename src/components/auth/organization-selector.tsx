@@ -57,7 +57,7 @@ export function OrganizationSelector({ onCreateNew, className }: OrganizationSel
     }
   };
 
-  const getRoleColor = (role: MemberRole) => {
+  const getUserRoleColor = (role: MemberRole) => {
     switch (role) {
       case "owner":
         return "bg-purple-100 text-purple-800 border-purple-300";
@@ -146,7 +146,7 @@ export function OrganizationSelector({ onCreateNew, className }: OrganizationSel
                       </div>
                       <div className="flex items-center gap-2">
                         {extendedOrg.role && (
-                          <Badge variant="outline" className={getRoleColor(extendedOrg.role)}>
+                          <Badge variant="outline" className={getUserRoleColor(extendedOrg.role)}>
                             {extendedOrg.role}
                           </Badge>
                         )}

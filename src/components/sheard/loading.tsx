@@ -34,7 +34,7 @@ export function Loading({
     ? color.startsWith("text-")
       ? color
       : `text-${color}`
-    : "text-brand-primary"
+    : "text-primary"
 
   return (
     <div

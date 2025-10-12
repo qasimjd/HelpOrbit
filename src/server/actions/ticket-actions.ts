@@ -1,6 +1,4 @@
 'use server'
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { unstable_cache } from 'next/cache'
 import { 
   getTicketsByOrganization, 

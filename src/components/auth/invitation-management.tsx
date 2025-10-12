@@ -7,9 +7,6 @@ import { z } from "zod";
 import { 
   Mail, 
   Send, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
   MoreHorizontal,
   RefreshCw,
   Trash2,
@@ -65,7 +62,9 @@ import {
   cancelInvitationAction,
   resendInvitationAction,
 } from "@/server/actions/invitation-actions";
-import type { InvitationData, MemberRole } from "@/types/auth-organization";
+import type { InvitationData } from "@/types/auth-organization";
+import { useActiveOrganization } from "@/lib/auth-client";
+import { inviteStatusColors, inviteStatusIcons } from "@/lib/utils";
 
 const inviteFormSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -77,32 +76,37 @@ type InviteFormData = z.infer<typeof inviteFormSchema>;
 interface InviteFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  organizationId: string;
+  organizationId?: string;
   onSuccess?: () => void;
+}
+
+interface InvitationPermissions {
+  canManageInvitations: boolean;
+  canCreateInvitations: boolean;
+  canCancelInvitations: boolean;
 }
 
 interface InvitationManagementProps {
   organizationId: string;
-  currentUserRole: MemberRole;
+  initialData?: InvitationData[];
+  initialPermissions?: InvitationPermissions;
 }
 
-const statusColors = {
-  pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
-  accepted: "bg-green-100 text-green-800 border-green-300",
-  rejected: "bg-red-100 text-red-800 border-red-300",
-  cancelled: "bg-gray-100 text-gray-800 border-gray-300",
+// Simple defaults
+const DEFAULT_PERMISSIONS = {
+  canManageInvitations: false,
+  canCreateInvitations: false,
+  canCancelInvitations: false,
 };
 
-const statusIcons = {
-  pending: Clock,
-  accepted: CheckCircle,
-  rejected: XCircle,
-  cancelled: XCircle,
-};
 
 function InviteMemberDialog({ open, onOpenChange, organizationId, onSuccess }: InviteFormProps) {
   const { toast } = useToast();
+  const { data: activeOrg } = useActiveOrganization();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Get effective organization ID
+  const effectiveOrgId = organizationId || activeOrg?.id;
 
   const form = useForm<InviteFormData>({
     resolver: zodResolver(inviteFormSchema),
@@ -113,10 +117,12 @@ function InviteMemberDialog({ open, onOpenChange, organizationId, onSuccess }: I
   });
 
   const onSubmit = async (data: InviteFormData) => {
+    if (!effectiveOrgId) return;
+    
     setIsSubmitting(true);
     try {
       const result = await inviteMemberAction({
-        organizationId,
+        organizationId: effectiveOrgId,
         email: data.email,
         role: data.role,
       });
@@ -229,23 +235,35 @@ function InviteMemberDialog({ open, onOpenChange, organizationId, onSuccess }: I
 }
 
 export function InvitationManagement({ 
-  organizationId, 
-  currentUserRole 
+  organizationId,
+  initialData = [],
+  initialPermissions
 }: InvitationManagementProps) {
   const { toast } = useToast();
-  const [invitations, setInvitations] = useState<InvitationData[]>([]);
-  const [loading, setLoading] = useState(true);
+  
+  // Simple state - start with initial data if provided
+  const [invitations, setInvitations] = useState<InvitationData[]>(initialData);
+  const [loading, setLoading] = useState(false);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [permissions] = useState(initialPermissions || DEFAULT_PERMISSIONS);
 
-  const loadInvitations = useCallback(async () => {
+  // Simple refresh function  
+  const refreshInvitations = useCallback(async () => {
+    if (!organizationId) return;
+    
     setLoading(true);
     try {
-      const result = await listInvitationsAction(organizationId);
+      const result = await listInvitationsAction({ 
+        organizationId, 
+        sortBy: 'createdAt', 
+        sortDirection: 'desc' 
+      });
       if (result.success && result.data) {
         setInvitations(result.data.invitations);
       }
-    } catch {
+    } catch (error) {
+      console.error('Error loading invitations:', error);
       toast({
         title: "Error",
         description: "Failed to load invitations",
@@ -256,11 +274,12 @@ export function InvitationManagement({
     }
   }, [organizationId, toast]);
 
+  // Load data only if we don't have initial data
   useEffect(() => {
-    loadInvitations();
-  }, [loadInvitations]);
-
-  const canManageInvitations = currentUserRole === "owner" || currentUserRole === "admin";
+    if (initialData?.length === 0) {
+      refreshInvitations();
+    }
+  }, [initialData?.length, refreshInvitations]); // Include dependencies
 
   const handleCancelInvitation = async (invitationId: string) => {
     setProcessingId(invitationId);
@@ -299,7 +318,7 @@ export function InvitationManagement({
           title: "Success",
           description: "Invitation resent",
         });
-        loadInvitations(); // Refresh the list
+        refreshInvitations(); // Refresh the list
       } else {
         toast({
           title: "Error",
@@ -345,15 +364,27 @@ export function InvitationManagement({
               <Mail className="h-5 w-5" />
               Invitations ({invitations.length})
             </CardTitle>
-            {canManageInvitations && (
-              <Button 
-                onClick={() => setShowInviteDialog(true)}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={refreshInvitations}
+                disabled={loading}
                 className="flex items-center gap-2"
               >
-                <Send className="h-4 w-4" />
-                Send Invitation
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
               </Button>
-            )}
+              {permissions.canCreateInvitations && (
+                <Button
+                  onClick={() => setShowInviteDialog(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Send className="h-4 w-4" />
+                  Send Invitation
+                </Button>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -371,7 +402,7 @@ export function InvitationManagement({
               </TableHeader>
               <TableBody>
                 {invitations.map((invitation) => {
-                  const StatusIcon = statusIcons[invitation.status];
+                  const StatusIcon = inviteStatusIcons[invitation.status];
                   const isExpired = new Date(invitation.expiresAt) < new Date();
                   const isProcessing = processingId === invitation.id;
 
@@ -388,7 +419,7 @@ export function InvitationManagement({
                       <TableCell>
                         <Badge 
                           variant="outline" 
-                          className={`${statusColors[invitation.status]} flex items-center gap-1 w-fit`}
+                          className={`${inviteStatusColors[invitation.status]} flex items-center gap-1 w-fit`}
                         >
                           <StatusIcon className="h-3 w-3" />
                           {invitation.status}
@@ -402,7 +433,7 @@ export function InvitationManagement({
                         {new Date(invitation.expiresAt).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
-                        {canManageInvitations && invitation.status === "pending" && (
+                        {permissions.canCancelInvitations && invitation.status === "pending" && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="sm" disabled={isProcessing}>
@@ -447,9 +478,7 @@ export function InvitationManagement({
         open={showInviteDialog}
         onOpenChange={setShowInviteDialog}
         organizationId={organizationId}
-        onSuccess={() => {
-          loadInvitations();
-        }}
+        onSuccess={refreshInvitations}
       />
     </>
   );
