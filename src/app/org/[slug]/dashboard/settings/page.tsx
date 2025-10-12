@@ -1,6 +1,7 @@
 import { OrganizationSettings } from "@/components/auth/organization-settings";
 import { getOrganizationBySlug } from "@/server/db/queries";
 import { notFound } from "next/navigation";
+import type { OrganizationData } from "@/types/auth-organization";
 
 export default async function OrganizationSettingsPage({
   params,
@@ -23,7 +24,7 @@ export default async function OrganizationSettingsPage({
         </div>
         
         <OrganizationSettings 
-          organization={organization}
+          organization={organization as OrganizationData}
           currentUserRole="owner"
         />
       </div>

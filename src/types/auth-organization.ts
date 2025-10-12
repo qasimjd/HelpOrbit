@@ -8,7 +8,7 @@ export interface OrganizationData {
   id: string;
   name: string;
   slug: string;
-  logo?: string | null | undefined;
+  logo: string;
   metadata?: Record<string, any> | null;
   createdAt?: Date | undefined;
   updatedAt?: Date | undefined;
