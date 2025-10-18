@@ -54,9 +54,17 @@ export async function getDashboardData(organizationId: string) {
 
     // Format recent tickets for dashboard
     const formattedRecentTickets = recentTickets.map(ticket => {
-      let tags = [];
+      let tags: string[] = [];
       try {
-        tags = ticket.tags ? JSON.parse(ticket.tags) : [];
+        if (!ticket.tags) {
+          tags = [];
+        } else if (typeof ticket.tags === 'string') {
+          tags = JSON.parse(ticket.tags) as string[];
+        } else if (Array.isArray(ticket.tags)) {
+          tags = ticket.tags;
+        } else {
+          tags = [];
+        }
       } catch (error) {
         console.warn('Failed to parse ticket tags:', error);
         tags = [];

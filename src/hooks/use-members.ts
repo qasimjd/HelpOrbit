@@ -77,7 +77,7 @@ export function useMembers({
 
   // Memoize includeRoles to avoid infinite re-renders
   const includeRolesString = JSON.stringify(includeRoles)
-  const memoizedIncludeRoles = useMemo(() => includeRoles, [includeRolesString, includeRoles])
+  const memoizedIncludeRoles = useMemo(() => includeRoles, [includeRolesString])
 
   const fetchMembers = useCallback(async (forceRefresh = false) => {
     if (!organizationId) {
