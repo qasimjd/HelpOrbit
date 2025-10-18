@@ -222,7 +222,7 @@ export async function listInvitationsAction(
     offset?: number;
     sortBy?: string;
     sortDirection?: "asc" | "desc";
-    status?: "pending" | "accepted" | "rejected" | "cancelled";
+    status?: "pending" | "accepted" | "rejected" | "canceled";
   }
 ): Promise<ActionResponse<InvitationListResponse>> {
   try {
@@ -241,13 +241,22 @@ export async function listInvitationsAction(
     }
 
     // Handle array response or paginated response
-    const invitations = Array.isArray(result) ? result : (result as any)?.invitations || [];
-    const count = Array.isArray(result) ? result.length : (result as any)?.total || invitations.length;
+    const rawInvitations = Array.isArray(result) ? result : (result as any)?.invitations || [];
+    const count = Array.isArray(result) ? result.length : (result as any)?.total || rawInvitations.length;
+
+    // Transform invitations to ensure all required fields are present
+    const invitations = rawInvitations.map((invitation: any) => ({
+      ...invitation,
+      // Ensure dates are properly formatted and present
+      createdAt: invitation.createdAt ? new Date(invitation.createdAt) : new Date(),
+      updatedAt: invitation.updatedAt ? new Date(invitation.updatedAt) : new Date(),
+      expiresAt: invitation.expiresAt ? new Date(invitation.expiresAt) : new Date(),
+    })) as InvitationData[];
 
     return {
       success: true,
       data: {
-        invitations: invitations as InvitationData[],
+        invitations,
         count,
         pagination: validatedInput.limit ? {
           page: Math.floor(validatedInput.offset / validatedInput.limit) + 1,

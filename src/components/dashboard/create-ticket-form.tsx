@@ -30,11 +30,13 @@ import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { createTicketAction, updateTicketAction, getTicketByIdAction } from "@/server/actions/ticket-actions"
 import { Loading } from "@/components/sheard/loading"
+import { useAssignableMembers, getMemberDisplayName, getMemberInitials } from "@/hooks/use-members"
 
 import { ticketSchema } from "@/schemas"
 import { toast } from "sonner"
 import { useEffect } from "react"
 import { UserRole } from "@/types"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 
 
@@ -62,6 +64,12 @@ export function CreateTicketForm({
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState("")
 
+  // Use custom hook for assignable members (only for admin/owner)
+  const shouldFetchMembers = userRole === "admin" || userRole === "owner"
+  const { assignableMembers, loading: loadingMembers } = useAssignableMembers(
+    shouldFetchMembers ? organizationId : undefined
+  )
+
   const form = useForm<TicketFormValues>({
     resolver: zodResolver(ticketSchema),
     defaultValues: {
@@ -70,6 +78,7 @@ export function CreateTicketForm({
       priority: "medium",
       type: "general",
       tags: [],
+      assigneeId: undefined,
     },
   })
 
@@ -85,6 +94,7 @@ export function CreateTicketForm({
   const dueDate = watch("dueDate")
   const priority = watch("priority")
   const type = watch("type")
+  const assigneeId = watch("assigneeId")
 
   // Fetch ticket data for edit mode
   useEffect(() => {
@@ -105,6 +115,7 @@ export function CreateTicketForm({
               type: ticket.type,
               tags: ticket.tags || [],
               dueDate: ticket.dueDate ? new Date(ticket.dueDate) : undefined,
+              assigneeId: ticket.assigneeId || undefined,
             })
             
             // Set tags state
@@ -128,8 +139,11 @@ export function CreateTicketForm({
   useEffect(() => {
     if (userRole && userRole !== "admin" && userRole !== "owner") {
       setValue("dueDate", undefined)
+      setValue("assigneeId", undefined)
     }
   }, [userRole, setValue])
+
+
 
   // Tags handlers
   const handleAddTag = (tag: string) => {
@@ -384,6 +398,55 @@ export function CreateTicketForm({
                   />
                 </PopoverContent>
               </Popover>
+            </div>
+          )}
+
+          {/* Assignee - Only show for admin and owner roles */}
+          {userRole && (userRole === "admin" || userRole === "owner") && (
+            <div className="space-y-2">
+              <Label>Assignee (optional)</Label>
+              <Select
+                onValueChange={(value) => setValue("assigneeId", value === "unassigned" ? undefined : value)}
+                value={assigneeId || "unassigned"}
+                disabled={isPending || isLoading || loadingMembers}
+              >
+                <SelectTrigger className="w-full focus:border-brand-primary">
+                  <SelectValue placeholder="Select assignee" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unassigned">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
+                        <span className="text-xs text-gray-500">—</span>
+                      </div>
+                      <span>Unassigned</span>
+                    </div>
+                  </SelectItem>
+                  {assignableMembers.map((member) => (
+                    <SelectItem key={member.id} value={member.id}>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="w-6 h-6">
+                          <AvatarImage src={member.user?.image} alt={member.user?.name} />
+                          <AvatarFallback className="text-xs">
+                            {getMemberInitials(member)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium">
+                            {getMemberDisplayName(member)}
+                          </span>
+                          <span className="text-xs text-muted-foreground capitalize">
+                            {member.role}
+                          </span>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {loadingMembers && (
+                <p className="text-xs text-muted-foreground">Loading team members...</p>
+              )}
             </div>
           )}
 

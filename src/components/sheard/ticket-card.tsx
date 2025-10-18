@@ -1,21 +1,22 @@
 import React from 'react'
 import {
-  getStatusColor,
-  getPriorityColor,
-  formatTicketDate,
-  formatStatusText,
-  formatPriorityText,
-  formatTypeText,
-  getTypeColor
+    getStatusColor,
+    getPriorityColor,
+    formatDate,
+    formatStatusText,
+    formatPriorityText,
+    formatTypeText,
+    getTypeColor
 } from '@/lib/ticket-utils'
 import { Card, CardContent } from '@/components/ui/card'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { TicketWithDetails } from '@/types'
-import { CalendarIcon, ClockIcon, UserIcon } from 'lucide-react'
+import { CalendarIcon } from 'lucide-react'
+import UserAvatar from './user-avatar'
 
 
-const TicketCard = ({ticket, slug}: {ticket: TicketWithDetails, slug: string}) => {
+const TicketCard = ({ ticket, slug }: { ticket: TicketWithDetails, slug: string }) => {
     return (
         <Card key={ticket.id} className="hover:shadow-md transition-shadow">
             <CardContent className="py-1 px-6">
@@ -48,32 +49,38 @@ const TicketCard = ({ticket, slug}: {ticket: TicketWithDetails, slug: string}) =
                             </Badge>
                         </div>
 
-                        <h3 className="font-medium mb-3 hover:text-brand-primary">
+                        <h3 className="font-medium mb-3 w-fit hover:text-brand-primary">
                             <Link href={`/org/${slug}/dashboard/tickets/${ticket.id}`}>
                                 {ticket.title}
                             </Link>
                         </h3>
 
                         <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
-                            <div className="flex items-center">
-                                <UserIcon className="w-4 h-4 mr-1" />
-                                {ticket.requester?.name || 'Unknown User'}
+                            <div className="flex items-center gap-2">
+                                <UserAvatar user={ticket.requester} />
+                                <span>Requester</span>
                             </div>
-                            <div className="flex items-center">
-                                <ClockIcon className="w-4 h-4 mr-1" />
-                                Assignee: {ticket.assignee ? 'Assigned' : 'Unassigned'}
+                            <div className="flex items-center gap-2">
+                                <UserAvatar user={ticket.assignee ? {
+                                    id: ticket.assignee.id,
+                                    name: ticket.assignee.name ?? '',
+                                    email: ticket.assignee.email ?? '',
+                                    image: ticket.assignee.image ?? null,
+                                    role: ticket.assignee.role
+                                } : undefined} />
+                                <span>{ticket.assignee?.name ?? 'Unassigned'}</span>
                             </div>
                             <div className="flex items-center">
                                 <CalendarIcon className="w-4 h-4 mr-1" />
-                                Created {formatTicketDate(ticket.createdAt)}
+                                {formatDate(ticket.createdAt)}
                             </div>
                         </div>
 
                         {/* Tags */}
                         {ticket.tags && ticket.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-3">
+                            <div className="flex flex-wrap gap-1 mt-4">
                                 {ticket.tags.map((tag: string) => (
-                                    <Badge key={tag} variant="secondary" className="text-xs text-foreground">
+                                    <Badge key={tag} variant="secondary" className="text-xs">
                                         {tag}
                                     </Badge>
                                 ))}
@@ -84,9 +91,13 @@ const TicketCard = ({ticket, slug}: {ticket: TicketWithDetails, slug: string}) =
                     {/* Assignee Avatar */}
                     <div className="ml-4 flex-shrink-0">
                         {ticket.assignee && (
-                            <div className="w-10 h-10 bg-brand-primary-100 text-brand-primary rounded-full flex items-center justify-center text-sm font-medium">
-                                AS
-                            </div>
+                            <UserAvatar size={44} user={ticket.assignee ? {
+                                id: ticket.assignee.id,
+                                name: ticket.assignee.name ?? '',
+                                email: ticket.assignee.email ?? '',
+                                image: ticket.assignee.image ?? null,
+                                role: ticket.assignee.role
+                            } : undefined} />
                         )}
                     </div>
                 </div>

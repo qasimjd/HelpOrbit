@@ -1,5 +1,5 @@
-import { MemberManagement } from "@/components/auth/member-management";
-import { InvitationManagement } from "@/components/auth/invitation-management";
+import { MemberManagement } from "@/components/invitation-membar/member-management";
+import { InvitationManagement } from "@/components/invitation-membar/invitation-management";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getOrganizationBySlug } from "@/server/db/queries";
@@ -22,24 +22,21 @@ export const metadata: Metadata = {
 export default async function MembersPage({ params }: TicketsPageProps) {
   const { slug } = await params
 
-  // Get organization
   const organization = await getOrganizationBySlug(slug)
 
   if (!organization) {
     notFound()
   }
 
-  // Get current session and check permissions
   const session = await requireServerSession();
 
-  // Fetch initial data server-side - simple approach
   let initialMembers: MemberData[] = [];
   let initialInvitations: InvitationData[] = [];
 
   try {
     const [membersResult, invitationsResult] = await Promise.all([
-      listMembersAction({ organizationId: organization.id, sortBy: 'createdAt', sortDirection: 'desc' }),
-      listInvitationsAction({ organizationId: organization.id, sortBy: 'createdAt', sortDirection: 'desc' }),
+      listMembersAction({ organizationId: organization.id, sortBy: 'createdAt', sortDirection: 'desc', limit: 50 }),
+      listInvitationsAction({ organizationId: organization.id, sortBy: 'createdAt', sortDirection: 'desc', limit: 3, }),
     ]);
 
     if (membersResult.success && membersResult.data) {
@@ -51,25 +48,26 @@ export default async function MembersPage({ params }: TicketsPageProps) {
     }
   } catch (error) {
     console.error('Failed to fetch initial data:', error);
-    // Continue without initial data - components will fetch on client side
+    // Error handling will be done on the client side
   }
 
-  // Simple permission defaults - let client components handle permissions
-  const defaultPermissions = {
-    canManageMembers: true, // Default to true, real permissions checked on client
+  const memberPermissions = {
+    canManageMembers: true, 
     canRemoveMembers: true,
     canUpdateRoles: true,
     canInviteMembers: true,
-    canCreateInvitations: true,
-    canCancelInvitations: true,
+  };
+
+  const invitationPermissions = {
     canManageInvitations: true,
+    canCancelInvitations: true,
   };
 
   return (
     <div className="container mx-auto">
       <div className="space-y-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Members & Invitations</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Members & Invitations</h1>
           <p className="text-muted-foreground">
             Manage organization members and send invitations.
           </p>
@@ -79,7 +77,7 @@ export default async function MembersPage({ params }: TicketsPageProps) {
         <MemberManagement
           organizationId={organization.id}
           initialData={initialMembers}
-          initialPermissions={defaultPermissions}
+          initialPermissions={memberPermissions}
           currentUserId={session.user.id}
         />
 
@@ -87,7 +85,7 @@ export default async function MembersPage({ params }: TicketsPageProps) {
         <InvitationManagement
           organizationId={organization.id}
           initialData={initialInvitations}
-          initialPermissions={defaultPermissions}
+          initialPermissions={invitationPermissions}
         />
       </div>
     </div>

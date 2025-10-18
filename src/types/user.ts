@@ -28,16 +28,6 @@ export interface UserSession {
   }
 }
 
-export interface UserContextValue {
-  user: User | null
-  currentOrganization: Organization | null
-  organizations: Organization[]
-  isLoading: boolean
-  error: string | null
-  refreshUser: () => Promise<void>
-  setCurrentOrganization: (org: Organization) => void
-}
-
 // Organization related types
 export interface Organization {
   id: string

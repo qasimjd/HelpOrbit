@@ -280,7 +280,7 @@ export async function createTicketAction(
       dueDate: ticketData.dueDate || null,
       organizationId,
       requesterId: userId,
-      assigneeId: null, // Will be assigned later
+      assigneeId: ticketData.assigneeId || null,
       status: 'open' as const
     }
 
@@ -445,7 +445,7 @@ export async function deleteTicketAction(
 export async function assignTicketAction(
   ticketId: string,
   organizationId: string,
-  assigneeId: string | null
+  assigneeUserId: string | null // This is the user ID, not member ID
 ): Promise<ApiResponse<Ticket>> {
   try {
     // Get the current ticket to preserve its type
@@ -457,8 +457,25 @@ export async function assignTicketAction(
       }
     }
     
+    let memberAssigneeId: string | null = null
+    
+    // If assigneeUserId is provided, find the corresponding member ID
+    if (assigneeUserId) {
+      const { getMemberByUserAndOrg } = await import('@/server/db/queries')
+      const memberRecord = await getMemberByUserAndOrg(assigneeUserId, organizationId)
+      
+      if (!memberRecord) {
+        return {
+          success: false,
+          error: 'User is not a member of this organization'
+        }
+      }
+      
+      memberAssigneeId = memberRecord.id
+    }
+    
     return await updateTicketAction(ticketId, organizationId, { 
-      assigneeId,
+      assigneeId: memberAssigneeId,
       type: currentTicket.data.type
     })
   } catch (error) {
@@ -486,10 +503,19 @@ export async function changeTicketStatusAction(
       }
     }
     
-    return await updateTicketAction(ticketId, organizationId, { 
+    const result = await updateTicketAction(ticketId, organizationId, { 
       status,
       type: currentTicket.data.type
     })
+
+    // Additional revalidation for ticket detail page
+    if (result.success) {
+      const { revalidatePath } = await import('next/cache')
+      // Revalidate the specific ticket page - this is important for immediate UI updates
+      revalidatePath(`/org/[slug]/dashboard/tickets/[ticketId]`, 'page')
+    }
+
+    return result
   } catch (error) {
     console.error('Error in changeTicketStatusAction:', error)
     return {

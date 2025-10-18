@@ -43,8 +43,8 @@ export const UserMenu = ({ user, organizationId }: UserMenuProps) => {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" asChild className="relative size-7 rounded-full">
-                    <Avatar className='ring-2 ring-brand-primary'>
+                <Button variant="ghost" size="icon" asChild className="relative size-8 rounded-full">
+                    <Avatar>
                         <AvatarImage src={user?.image || undefined} alt={user?.name || 'User'} />
                         <AvatarFallback
                             className="bg-brand-surface text-brand-primary text-xs"
@@ -57,7 +57,7 @@ export const UserMenu = ({ user, organizationId }: UserMenuProps) => {
             <DropdownMenuContent align="end" className='w-56'>
                 {/* User Info */}
                 <div className="flex items-center gap-2 p-2">
-                    <Avatar className="h-8 w-8">
+                    <Avatar className="size-9">
                         <AvatarImage src={user?.image || undefined} alt={user?.name || 'User'} />
                         <AvatarFallback
                             className="bg-brand-surface text-brand-primary text-xs"
@@ -83,7 +83,7 @@ export const UserMenu = ({ user, organizationId }: UserMenuProps) => {
                             href={organizationId ? buildHref(item.href, organizationId) : item.href}
                             className="flex items-center gap-2 cursor-pointer"
                         >
-                            <item.icon className="h-4 w-4 text-brand-primary" />
+                            <item.icon className="h-4 w-4" />
                             {item.name}
                         </Link>
                     </DropdownMenuItem>

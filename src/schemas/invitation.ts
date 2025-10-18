@@ -13,7 +13,7 @@ export const listInvitationsSchema = z.object({
   offset: z.number().min(0).default(0),
   sortBy: z.string().optional(),
   sortDirection: z.enum(["asc", "desc"]).default("desc"),
-  status: z.enum(["pending", "accepted", "rejected", "cancelled"]).optional(),
+  status: z.enum(["pending", "accepted", "rejected", "canceled"]).optional(),
 })
 
 // List user invitations schema

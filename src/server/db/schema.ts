@@ -3,7 +3,7 @@ import { pgEnum, pgTable, text, timestamp, boolean, integer } from "drizzle-orm/
 export const userRoleEnum = pgEnum("user_role", ["user", "admin", "superAdmin", "owner"]);
 export const userStatusEnum = pgEnum("user_status", ["active", "inactive", "banned", "pending"]);
 export const memberRoleEnum = pgEnum("member_role", ["owner", "admin", "member", "guest"]);
-export const invitationStatusEnum = pgEnum("invitation_status", ["pending", "accepted", "rejected", "cancelled"]);
+export const invitationStatusEnum = pgEnum("invitation_status", ["pending", "accepted", "rejected", "canceled"]);
 export const ticketStatusEnum = pgEnum("ticket_status", ["open", "in_progress", "waiting_for_customer", "resolved", "closed"]);
 export const ticketPriorityEnum = pgEnum("ticket_priority", ["low", "medium", "high", "urgent"]);
 export const ticketTypeEnum = pgEnum("ticket_type", ["general", "bug", "feature_request", "support", "billing", "other"]);
@@ -128,20 +128,6 @@ export const invitation = pgTable("invitation", {
     .notNull(),
 });
 
-export const organizationRole = pgTable("organization_role", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  description: text("description"),
-  permissions: text("permissions").notNull(), // JSON string of permissions
-  organizationId: text("organization_id")
-    .notNull()
-    .references(() => organization.id, { onDelete: "cascade" }),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .$onUpdate(() => /* @__PURE__ */ new Date())
-    .notNull(),
-});
 
 // Ticket tables
 export const ticket = pgTable("ticket", {

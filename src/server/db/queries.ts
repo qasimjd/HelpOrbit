@@ -9,6 +9,7 @@ import {
   ticketAttachment
 } from './schema';
 import { and, desc, eq, count, asc, inArray, gte, lte } from "drizzle-orm"
+import { alias } from "drizzle-orm/pg-core"
 import { parseTags, stringifyTags } from '@/lib/ticket-utils';
 import type { 
   User, 
@@ -176,6 +177,9 @@ export async function getTicketsByOrganization(
   organizationId: string, 
   filters?: TicketFilters
 ): Promise<TicketWithDetails[]> {
+  // Create alias for assignee user
+  const assigneeUser = alias(user, 'assigneeUser');
+  
   // Build where conditions
   const whereConditions = [eq(ticket.organizationId, organizationId)];
   
@@ -239,11 +243,18 @@ export async function getTicketsByOrganization(
         id: member.id,
         userId: member.userId,
         role: member.role,
+      },
+      assigneeUser: {
+        id: assigneeUser.id,
+        name: assigneeUser.name,
+        email: assigneeUser.email,
+        image: assigneeUser.image,
       }
     })
     .from(ticket)
     .leftJoin(user, eq(ticket.requesterId, user.id))
     .leftJoin(member, eq(ticket.assigneeId, member.id))
+    .leftJoin(assigneeUser, eq(member.userId, assigneeUser.id))
     .where(and(...whereConditions))
     .orderBy(desc(ticket.createdAt));
 
@@ -255,7 +266,11 @@ export async function getTicketsByOrganization(
       id: ticketData.assignee.id,
       userId: ticketData.assignee.userId,
       role: ticketData.assignee.role,
+      name: ticketData.assigneeUser?.name || null,
+      email: ticketData.assigneeUser?.email || null,
+      image: ticketData.assigneeUser?.image || null,
     } : null,
+    assigneeUser: undefined,
   })) as TicketWithDetails[];
 
   // Filter by tags (post-processing since tags are stored as JSON/string)
@@ -335,6 +350,9 @@ export async function getTicketStats(organizationId: string): Promise<TicketStat
 }
 
 export async function getTicketById(ticketId: string, organizationId: string) {
+  // Create alias for assignee user
+  const assigneeUser = alias(user, 'assigneeUser');
+  
   const result = await db
     .select({
       id: ticket.id,
@@ -360,21 +378,38 @@ export async function getTicketById(ticketId: string, organizationId: string) {
         id: member.id,
         userId: member.userId,
         role: member.role,
+      },
+      assigneeUser: {
+        id: assigneeUser.id,
+        name: assigneeUser.name,
+        email: assigneeUser.email,
+        image: assigneeUser.image,
       }
     })
     .from(ticket)
     .leftJoin(user, eq(ticket.requesterId, user.id))
     .leftJoin(member, eq(ticket.assigneeId, member.id))
+    .leftJoin(assigneeUser, eq(member.userId, assigneeUser.id))
     .where(and(eq(ticket.id, ticketId), eq(ticket.organizationId, organizationId)))
     .limit(1);
   
   const ticketData = result[0];
   if (!ticketData) return null;
 
-  // Parse tags from JSON string or comma-separated string to array
+  // Parse tags and merge assignee info
   return {
     ...ticketData,
-    tags: parseTags(ticketData.tags)
+    tags: parseTags(ticketData.tags),
+    assignee: ticketData.assignee?.id ? {
+      id: ticketData.assignee.id,
+      userId: ticketData.assignee.userId,
+      role: ticketData.assignee.role,
+      name: ticketData.assigneeUser?.name || null,
+      email: ticketData.assigneeUser?.email || null,
+      image: ticketData.assigneeUser?.image || null,
+    } : null,
+    // Remove the separate assigneeUser field as it's now merged into assignee
+    assigneeUser: undefined,
   };
 }
 
@@ -409,12 +444,16 @@ export async function getTicketAttachments(ticketId: string) {
 
 
 export async function getRecentTickets(organizationId: string, limit = 5) {
-  return await db
+  // Create alias for assignee user
+  const assigneeUser = alias(user, 'assigneeUser');
+  
+  const results = await db
     .select({
       id: ticket.id,
       title: ticket.title,
       status: ticket.status,
       priority: ticket.priority,
+      type: ticket.type,
       tags: ticket.tags,
       createdAt: ticket.createdAt,
       requester: {
@@ -424,14 +463,37 @@ export async function getRecentTickets(organizationId: string, limit = 5) {
       assignee: {
         id: member.id,
         userId: member.userId,
+        role: member.role,
+      },
+      assigneeUser: {
+        name: assigneeUser.name,
+        email: assigneeUser.email,
+        image: assigneeUser.image,
       }
     })
     .from(ticket)
     .leftJoin(user, eq(ticket.requesterId, user.id))
     .leftJoin(member, eq(ticket.assigneeId, member.id))
+    .leftJoin(assigneeUser, eq(member.userId, assigneeUser.id))
     .where(eq(ticket.organizationId, organizationId))
     .orderBy(desc(ticket.createdAt))
     .limit(limit);
+
+  // Merge assignee info and parse tags
+  return results.map(ticketData => ({
+    ...ticketData,
+    tags: parseTags(ticketData.tags),
+    assignee: ticketData.assignee?.id ? {
+      id: ticketData.assignee.id,
+      userId: ticketData.assignee.userId,
+      role: ticketData.assignee.role,
+      name: ticketData.assigneeUser?.name || null,
+      email: ticketData.assigneeUser?.email || null,
+      image: ticketData.assigneeUser?.image || null,
+    } : null,
+    // Remove the separate assigneeUser field
+    assigneeUser: undefined,
+  }));
 }
 
 // Member queries

@@ -20,11 +20,14 @@ export interface Ticket {
 
 // Ticket with populated relations
 export interface TicketWithDetails extends Ticket {
-  requester?: User | null
+  requester: User | null
   assignee?: {
     id: string
     userId: string
     role: string
+    image?: string | null
+    email?: string | null
+    name?: string | null
   } | null
   comments?: TicketComment[]
   attachments?: TicketAttachment[]

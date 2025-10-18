@@ -7,5 +7,6 @@ export const ticketSchema = z.object({
   priority: z.enum(["low", "medium", "high", "urgent"]),
   type: z.enum(["general", "bug", "feature_request", "support", "billing", "other"]),
   dueDate: z.date().optional(),
-  tags: z.array(z.string()).optional()
+  tags: z.array(z.string()).optional(),
+  assigneeId: z.string().optional()
 })

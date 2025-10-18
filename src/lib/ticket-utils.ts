@@ -57,7 +57,7 @@ export function getPriorityColor(priority: TicketPriority): string {
 /**
  * Format a date string for display in ticket lists and details
  */
-export function formatTicketDate(dateString: string | Date): string {
+export function formatDate(dateString: string | Date): string {
   const date = typeof dateString === 'string' ? new Date(dateString) : dateString
   
   return date.toLocaleDateString('en-US', {
@@ -95,7 +95,7 @@ export function formatRelativeDate(dateString: string | Date): string {
     return `${diffInDays} day${diffInDays === 1 ? '' : 's'} ago`
   }
   
-  return formatTicketDate(date)
+  return formatDate(date)
 }
 
 /**

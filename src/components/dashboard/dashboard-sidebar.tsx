@@ -4,14 +4,11 @@ import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { 
-  ChevronUpIcon,
   MailIcon,
   BarChart3Icon,
-  BuildingIcon
+  BuildingIcon,
 } from 'lucide-react'
 import { BrandedLogo } from '@/components/branding/branded-logo'
-import { SwitchOrganizationButton } from '@/components/auth/switch-organization-button'
-import { LogoutButton } from '@/components/auth/logout-button'
 import { Separator } from '@/components/ui/separator'
 import type { User, UserRole, Organization } from '@/types'
 import { 
@@ -24,7 +21,6 @@ import {
 import { 
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -34,14 +30,7 @@ import {
   SidebarMenuItem,
   useSidebar
 } from '@/components/ui/sidebar'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { cn, getInitials } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 
 interface DashboardSidebarProps {
   /** The slug of the current organization */
@@ -83,7 +72,6 @@ const ORGANIZATION_MENU = [
 export function DashboardSidebar({ 
   organizationSlug, 
   organization, 
-  user, 
   userRole 
 }: DashboardSidebarProps) {
   const pathname = usePathname()
@@ -304,7 +292,7 @@ export function DashboardSidebar({
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border">
+      {/* <SidebarFooter className="border-t border-sidebar-border">
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
@@ -343,7 +331,8 @@ export function DashboardSidebar({
                 sideOffset={4}
               >
                 <DropdownMenuItem asChild>
-                  <Link href={buildHref('/dashboard/profile', organizationSlug)}>
+                  <Link href={buildHref('/dashboard/profile', organizationSlug)} className="flex items-center gap-2 cursor-pointer">
+                  <User2 className="h-4 w-4" />
                     Profile Settings
                   </Link>
                 </DropdownMenuItem>
@@ -356,7 +345,7 @@ export function DashboardSidebar({
                   <div className="w-full">
                     <LogoutButton 
                       variant="ghost"
-                      className="w-full justify-start h-auto p-0"
+                      className="flex items-center gap-2 cursor-pointer"
                     />
                   </div>
                 </DropdownMenuItem>
@@ -364,7 +353,7 @@ export function DashboardSidebar({
             </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
-      </SidebarFooter>
+      </SidebarFooter> */}
     </Sidebar>
   )
 }

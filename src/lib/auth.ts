@@ -11,20 +11,14 @@ import {
     organization as organizationTable,
     member,
     invitation,
-    organizationRole
 } from "@/server/db/schema";
 import { sendEmailVerification, sendPasswordReset, sendOrganizationInvitation } from "@/lib/emails";
-import { createAuthMiddleware, APIError } from "better-auth/api";
-import { passwordSchema } from "@/schemas";
 import { ac, roles } from "@/lib/permissions";
 
 
 
 export const auth = betterAuth({
-    trustedOrigins: [
-        process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-        "http://localhost:3000/org"
-    ],
+    trustedOrigins: [process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000", "http://localhost:3000/org"],
     emailAndPassword: {
         enabled: true,
         sendResetPassword: async ({ user, url }) => {
@@ -47,21 +41,6 @@ export const auth = betterAuth({
             });
         }
     },
-    hooks: {
-        before: createAuthMiddleware(async (ctx) => {
-            if (
-                ctx.path === "/signup/email" ||
-                ctx.path === "/reset-password" ||
-                ctx.path === "/change-password"
-            ) {
-                const password = ctx.body?.password || ctx.body?.newPassword;
-                const { error } = passwordSchema.safeParse(password);
-                if (error) {
-                    throw new APIError("BAD_REQUEST", { message: error.message });
-                }
-            }
-        })
-    },
     socialProviders: {
         google: {
             clientId: process.env.GOOGLE_CLIENT_ID as string,
@@ -82,8 +61,7 @@ export const auth = betterAuth({
             organization: organizationTable,
             member,
             invitation,
-            organizationRole
-        },
+       },
     }),
     plugins: [
         organization({

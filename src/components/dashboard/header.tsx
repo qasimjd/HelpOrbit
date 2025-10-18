@@ -48,7 +48,7 @@ export function Header({ organizationSlug, organizationName, user, className }: 
           <div className="hidden md:block">
             <div className="relative">
               <SearchIcon
-                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-50 text-brand-primary"
+                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-50"
               />
               <Input
                 placeholder="Search tickets..."

@@ -3,9 +3,9 @@ import { Metadata } from 'next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { 
-  TicketIcon, 
-  CheckCircleIcon, 
+import {
+  TicketIcon,
+  CheckCircleIcon,
   AlertCircleIcon,
   TrendingUpIcon,
   PlusIcon,
@@ -14,7 +14,7 @@ import {
 import Link from 'next/link'
 import { getDashboardData } from '@/server/actions/dashboard-actions'
 import { getOrganizationBySlug } from '@/server/db/queries'
-import { statusColors } from '@/lib/ticket-utils'
+import { formatPriorityText, formatStatusText, formatTypeText, getPriorityColor, getStatusColor, getTypeColor } from '@/lib/ticket-utils'
 
 interface DashboardPageProps {
   params: Promise<{ slug: string }>
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 // Map icon names to components
 const iconMap = {
   TicketIcon,
-  ClockIcon, 
+  ClockIcon,
   CheckCircleIcon,
   AlertCircleIcon
 }
@@ -36,7 +36,7 @@ const iconMap = {
 
 export default async function DashboardPage({ params }: DashboardPageProps) {
   const { slug } = await params
-  
+
   // Get organization data
   const organization = await getOrganizationBySlug(slug)
   if (!organization) {
@@ -51,7 +51,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <h1 className="text-2xl font-bold">Dashboard</h1>
           <p className="mt-1 text-muted-foreground">
             Welcome back! Here&apos;s what&apos;s happening with your support tickets.
           </p>
@@ -107,32 +107,38 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
           <CardContent>
             <div className="space-y-4">
               {recentTickets.map((ticket) => (
-                <div 
+                <div
                   key={ticket.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-center justify-between p-4 border rounded-lg transition-colors"
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-3">
-                      <Link 
+                      <Link
                         href={`/org/${slug}/dashboard/tickets/${ticket.id}`}
                         className="font-medium hover:text-brand-primary"
                       >
                         #{ticket.id}
                       </Link>
-                      <Badge 
-                        variant="secondary" 
-                        className={statusColors[ticket.status as keyof typeof statusColors]}
+                      <Badge
+                        variant="secondary"
+                        className={getStatusColor(ticket.status)}
                       >
-                        {ticket.status.replace('_', ' ')}
+                        {formatStatusText(ticket.status)}
                       </Badge>
-                      <Badge 
-                        variant="outline" 
-                        className={statusColors[ticket.priority as keyof typeof statusColors]}
+                      <Badge
+                        variant="outline"
+                        className={getPriorityColor(ticket.priority)}
                       >
-                        {ticket.priority}
+                        {formatPriorityText(ticket.priority)}
+                      </Badge>
+                      <Badge
+                        variant="secondary"
+                        className={getTypeColor(ticket.type)}
+                      >
+                        {formatTypeText(ticket.type)}
                       </Badge>
                     </div>
-                    <p className="text-sm text-gray-900 mt-1 truncate">
+                    <p className="text-sm mt-1 truncate">
                       {ticket.title}
                     </p>
                     <div className="flex items-center space-x-4 mt-2 text-xs text-muted-foreground">

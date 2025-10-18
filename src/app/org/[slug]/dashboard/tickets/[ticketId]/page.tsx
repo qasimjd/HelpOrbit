@@ -3,21 +3,20 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import { unstable_cache } from 'next/cache'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, Clock, User, Calendar, Tag, AlertCircle } from 'lucide-react'
+import { ArrowLeft, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
 import { getOrganizationBySlug, getTicketById } from '@/server/db/queries'
 import {
   getStatusColor,
   getPriorityColor,
-  formatTicketDate,
   formatStatusText,
   formatPriorityText,
-  formatRelativeDate
+  getTypeColor,
+  formatTypeText
 } from '@/lib/ticket-utils'
-import TicketActionCard from '@/components/sheard/ticket-action-card'
+import TicketClientWrapper from '@/components/tickets/ticket-client-wrapper'
 
 interface TicketDetailPageProps {
   params: Promise<{ slug: string; ticketId: string }>
@@ -39,7 +38,7 @@ const getCachedTicketById = (ticketId: string, organizationId: string) => unstab
   },
   [`ticket-${ticketId}-${organizationId}`],
   {
-    tags: [`ticket-${ticketId}`, `tickets-${organizationId}`],
+    tags: [`ticket:${ticketId}`, `tickets:${organizationId}`],
     revalidate: 60, // Cache for 1 minute
   }
 )
@@ -88,6 +87,12 @@ export default async function TicketDetailPage({ params }: TicketDetailPageProps
                 className={getPriorityColor(ticket.priority)}
               >
                 {formatPriorityText(ticket.priority)}
+              </Badge>
+              <Badge
+                variant="secondary"
+                className={getTypeColor(ticket.type)}
+              >
+                {formatTypeText(ticket.type)}
               </Badge>
             </div>
             <p className="text-foreground mt-1">
@@ -138,108 +143,12 @@ export default async function TicketDetailPage({ params }: TicketDetailPageProps
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Ticket Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Ticket Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground flex items-center">
-                  <User className="w-4 h-4 mr-2" />
-                  Requester
-                </span>
-                <Link href={`/org/${slug}/dashboard/users/${ticket.requester?.id}`} className="font-medium">
-                  {ticket.requester?.name || 'Unknown User'}
-                </Link>
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground flex items-center">
-                  <Clock className="w-4 h-4 mr-2" />
-                  Assignee
-                </span>
-                {ticket.assignee ? (
-                  <Link href={`/org/${slug}/dashboard/users/${ticket.assignee.id}`} className="font-medium">
-                    {ticket.assignee.id || 'Assigned'}
-                  </Link>
-                ) : (
-                  <span className="font-medium">Unassigned</span>
-                )}
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground flex items-center">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Created
-                </span>
-                <span className="font-medium">
-                  {formatTicketDate(ticket.createdAt)}
-                </span>
-              </div>
-
-              {ticket.updatedAt && ticket.createdAt && new Date(ticket.updatedAt).getTime() !== new Date(ticket.createdAt).getTime() && (
-                <>
-                  <Separator />
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground flex items-center">
-                      <Calendar className="w-4 h-4 mr-2" />
-                      Updated
-                    </span>
-                    <span className="font-medium">
-                      {formatRelativeDate(ticket.updatedAt)}
-                    </span>
-                  </div>
-                </>
-              )}
-
-              {ticket.resolvedAt && (
-                <>
-                  <Separator />
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground flex items-center">
-                      <Calendar className="w-4 h-4 mr-2" />
-                      Resolved
-                    </span>
-                    <span className="font-medium">
-                      {formatTicketDate(ticket.resolvedAt)}
-                    </span>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Tags */}
-          {tags && tags.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Tag className="w-5 h-5 mr-2" />
-                  Tags
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {tags.map((tag: string) => (
-                    <Badge key={tag} variant="secondary" className="text-xs">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Actions */}
-          <TicketActionCard slug={slug} ticketId={ticket.id} />
-
-        </div>
+        <TicketClientWrapper 
+          slug={slug} 
+          ticket={ticket} 
+          organizationId={organization.id} 
+          tags={tags} 
+        />
       </div>
     </div>
   )

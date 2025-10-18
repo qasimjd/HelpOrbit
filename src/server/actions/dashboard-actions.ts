@@ -67,6 +67,7 @@ export async function getDashboardData(organizationId: string) {
         title: ticket.title,
         status: ticket.status,
         priority: ticket.priority,
+        type: ticket.type,
         customer: ticket.requester?.name || 'Unknown',
         assignee: ticket.assignee?.userId || null,
         created: formatTimeAgo(ticket.createdAt),

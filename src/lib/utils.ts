@@ -1,6 +1,6 @@
-import { MemberRole } from "@/types/auth-organization"
+import { MemberRole, InvitationStatus } from "@/types/auth-organization"
 import { clsx, type ClassValue } from "clsx"
-import { CheckCircle, Clock, Crown, Shield, ShieldCheck, Users, XCircle } from "lucide-react"
+import { CheckCircle, Clock, Crown, Shield, ShieldCheck, User, Users, XCircle, AlertCircle } from "lucide-react"
 import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
@@ -21,6 +21,19 @@ export const getUserRoleColor = (role: MemberRole) => {
       return 'bg-gray-100 text-gray-800 border-gray-200'
   }
 }
+
+export const getRoleIcon = (role: MemberRole) => {
+  switch (role) {
+    case "owner":
+      return Crown;
+    case "admin":
+      return Shield;
+    case "member":
+      return ShieldCheck;
+    default:
+      return User;
+  }
+};
 
 export const userRoleIcons = {
   owner: Crown,
@@ -80,11 +93,11 @@ export function generateSlug(input: string): string {
   return input
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9\s-]/g, "") // remove invalid chars
-    .replace(/\s+/g, "-") // spaces → hyphen
-    .replace(/-+/g, "-") // collapse multiple hyphens
-    .replace(/^-+|-+$/g, "") // trim leading/trailing hyphens
-    .slice(0, 50); // enforce max length
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-") 
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 50);
 }
 
 export function generateId(): string {
@@ -94,17 +107,38 @@ export function generateId(): string {
   return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
 }
 
+/**
+ * Get role color classes with dark mode support for badges
+ */
+export const getRoleColorWithDarkMode = (role: MemberRole) => {
+  switch (role) {
+    case 'owner':
+      return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300'
+    case 'admin':
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+    case 'member':
+      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+    case 'guest':
+      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
+    default:
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
+  }
+}
 
-export const inviteStatusColors = {
-  pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
-  accepted: "bg-green-100 text-green-800 border-green-300",
-  rejected: "bg-red-100 text-red-800 border-red-300",
-  cancelled: "bg-gray-100 text-gray-800 border-gray-300",
-};
-
-export const inviteStatusIcons = {
-  pending: Clock,
-  accepted: CheckCircle,
-  rejected: XCircle,
-  cancelled: XCircle,
-}; 
+/**
+ * Get status icon component and color class for invitations
+ */
+export const getInvitationStatusIcon = (status: InvitationStatus) => {
+  switch (status) {
+    case 'pending':
+      return { icon: Clock, colorClass: "text-amber-500" }
+    case 'accepted':
+      return { icon: CheckCircle, colorClass: "text-green-500" }
+    case 'rejected':
+      return { icon: XCircle, colorClass: "text-red-500" }
+    case 'canceled':
+      return { icon: XCircle, colorClass: "text-gray-500" }
+    default:
+      return { icon: AlertCircle, colorClass: "text-gray-500" }
+  }
+} 

@@ -6,7 +6,8 @@ import {
   Section,
   Text,
   Button,
-} from '@react-email/components';
+  Hr,
+} from "@react-email/components";
 
 interface OrganizationInvitationTemplateProps {
   inviteeName?: string;
@@ -29,33 +30,43 @@ export function OrganizationInvitationTemplate({
       <Body style={main}>
         <Container style={container}>
           <Section>
+            {/* Heading */}
             <Text style={heading}>
-              You&apos;re invited to join <strong>{organizationName}</strong>
+              You&apos;re Invited to Join {organizationName}
             </Text>
 
+            {/* Greeting */}
             <Text style={text}>
-              Hi {inviteeName || 'there'},
+              Hi {inviteeName || "there"},
             </Text>
 
+            {/* Intro */}
             <Text style={text}>
-              {inviterName} has invited you to join <strong>{organizationName}</strong> as a {role}.
+              {inviterName} has invited you to join <strong>{organizationName}</strong> as a{" "}
+              <strong>{role}</strong>. Accept the invitation to start collaborating with your team.
             </Text>
 
+            {/* Button */}
             <Section style={buttonContainer}>
               <Button style={button} href={invitationUrl}>
                 Accept Invitation
               </Button>
             </Section>
 
-            <Text style={smallText}>
-              If you don&apos;t want to join this organization, you can safely ignore this email.
+            {/* Extra info */}
+            <Text style={subText}>
+              If you don’t want to join this organization, you can safely ignore this email.
             </Text>
-            <Text style={smallText}>
-              This invitation will expire in 48 hours.
+            <Text style={subText}>
+              For security reasons, this invitation will expire in 48 hours.
             </Text>
 
+            <Hr style={hr} />
+
+            {/* Footer */}
             <Text style={footer}>
-              – The HelpOrbit Team
+              Best, <br />
+              The HelpOrbit Team
             </Text>
           </Section>
         </Container>
@@ -64,61 +75,69 @@ export function OrganizationInvitationTemplate({
   );
 }
 
-// Styles
+/* ===== Styles (matching EmailVerificationTemplate) ===== */
 const main = {
-  backgroundColor: '#f9fafb',
+  backgroundColor: "hsl(var(--background))",
   fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
+    "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Ubuntu,sans-serif",
+  padding: "24px",
 };
 
 const container = {
-  backgroundColor: '#ffffff',
-  margin: '40px auto',
-  padding: '32px',
-  borderRadius: '8px',
-  maxWidth: '480px',
+  backgroundColor: "hsl(var(--card))",
+  borderRadius: "12px",
+  margin: "0 auto",
+  padding: "32px 24px",
+  maxWidth: "480px",
+  boxShadow: "0 4px 16px rgba(0,0,0,0.06)",
 };
 
 const heading = {
-  fontSize: '20px',
-  fontWeight: '600',
-  marginBottom: '16px',
-  color: '#111827',
+  fontSize: "24px",
+  fontWeight: 600,
+  color: "hsl(var(--foreground))",
+  marginBottom: "16px",
 };
 
 const text = {
-  fontSize: '16px',
-  color: '#374151',
-  margin: '12px 0',
+  color: "hsl(var(--foreground))",
+  fontSize: "16px",
+  lineHeight: "26px",
+  marginBottom: "16px",
 };
 
-const smallText = {
-  fontSize: '14px',
-  color: '#6b7280',
-  marginTop: '12px',
+const subText = {
+  color: "hsl(var(--muted-foreground))",
+  fontSize: "14px",
+  lineHeight: "22px",
+  marginBottom: "8px",
 };
 
 const buttonContainer = {
-  textAlign: 'center' as const,
-  margin: '24px 0',
+  textAlign: "center" as const,
+  margin: "32px 0",
 };
 
 const button = {
-  backgroundColor: 'var(--brand-primary)', // your brand color
-  borderRadius: '6px',
-  color: '#fff',
-  fontSize: '16px',
-  fontWeight: '500',
-  textDecoration: 'none',
-  padding: '12px 24px',
-  display: 'inline-block',
+  backgroundColor: "hsl(var(--primary))",
+  borderRadius: "8px",
+  color: "hsl(var(--primary-foreground))",
+  fontSize: "16px",
+  fontWeight: 500,
+  textDecoration: "none",
+  textAlign: "center" as const,
+  display: "inline-block",
+  padding: "12px 24px",
+};
+
+const hr = {
+  borderColor: "hsl(var(--border))",
+  margin: "32px 0",
 };
 
 const footer = {
-  fontSize: '13px',
-  color: '#9ca3af',
-  marginTop: '24px',
-  textAlign: 'center' as const,
+  color: "hsl(var(--muted-foreground))",
+  fontSize: "14px",
 };
 
 export default OrganizationInvitationTemplate;

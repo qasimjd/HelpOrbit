@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Enhanced types for Better Auth Organization plugin
 export type MemberRole = "owner" | "admin" | "member" | "guest";
-export type InvitationStatus = "pending" | "accepted" | "rejected" | "cancelled";
+export type InvitationStatus = "pending" | "accepted" | "rejected" | "canceled";
 
 // Core Organization types
 export interface OrganizationData {
@@ -26,6 +26,7 @@ export interface MemberData {
     name: string;
     email: string;
     image?: string;
+    emailVerified: boolean;
   };
 }
 
